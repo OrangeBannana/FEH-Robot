@@ -30,8 +30,7 @@ double BMweight = 0.90;
 bool useBiases = true;
 
 // PID controllers
-PDFL xController(1.0, 0, 0, 0);
-PDFL yController(1.0, 0, 0, 0);
+PDFL tController(1.0, 0, 0, 0);
 PDFL hController(0.085, 0, 0, 0);
 
 // Initial Target Positions
@@ -52,18 +51,21 @@ void DriveTo(double X, double Y, double Theta) {
     // Y+ is forward
     // X+ is right
     
-    xController.setTarget(X);
-    yController.setTarget(Y);
+    float tError = sqrt(pow(targetX - pos.x, 2) + pow(targetY - pos.y, 2));
+
+    tController.setTarget(0);
     hController.setTarget(Theta);
 
-    xController.update(pos.x);
-    yController.update(pos.y);
+    tController.update(tError);
     hController.update(pos.h);
 
     float hRads = (pos.h * PI) / 180;
 
-    float vX = xController.output * cos(hRads)  + yController.output * sin(hRads);
-    float vY = -xController.output * sin(hRads) + yController.output * cos(hRads);
+    float vX1 = ((targetX - pos.x) / tError) * -tController.output;
+    float vY1 = ((targetY - pos.y) / tError) * -tController.output;
+
+    float vX = vX1 * cos(hRads)  + vY1 * sin(hRads);
+    float vY = -vX1 * sin(hRads) + vY1 * cos(hRads);
     float vTheta = -hController.output;
 
     double BMpower = -vX + vTheta;
