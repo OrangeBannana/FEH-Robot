@@ -42,10 +42,32 @@ float targetX = 0;
 float targetY = 0;
 float targetH = 0;
 
-// Assign motor powers with X Y and Theta velocities arbitrary units [-1, 1]
-void SetMotorPowers(double vX, double vY, double vTheta) {
+// Robot position
+OTOSPose pos;
+
+// Drive to a global coordinate using PID
+void DriveTo(double X, double Y, double Theta) {
+
+    targetX = X;
+    targetY = Y;
+    targetH = Theta;
+    // For both robot and world coordinates
     // Y+ is forward
     // X+ is right
+    
+    xController.setTarget(X);
+    yController.setTarget(Y);
+    hController.setTarget(Theta);
+
+    xController.update(pos.x);
+    yController.update(pos.y);
+    hController.update(pos.h);
+
+    float hRads = (pos.h * M_PI) / 180;
+
+    float vX = xController.output * cos(hRads)  + yController.output * sin(hRads);
+    float vY = -xController.output * sin(hRads) + yController.output * cos(hRads);
+    float vTheta = hController.output;
 
     double BMpower = -vX + vTheta;
     double FRpower = (1.0/2.0) * vX - (sqrt(3) / 2) * vY + vTheta;
@@ -83,77 +105,34 @@ void ERCMain()
 {
     FEHLog::enableBLE(152);
 
-    int step = 1;
-
     OTOS.begin();
     OTOS.resetTracking();
     OTOS.calibrateImu();
 
     Sleep(10.0);
-
-    OTOSPose pos;
-
-    xController.setTarget(0);
-    yController.setTarget(0);
-    hController.setTarget(0);
-
+    
+    int step = 1;
     while (true) {
         OTOS.getPosition(pos);
 
         switch (step) {
             case 1:
-                targetX = 10;
-                targetY = 10;
-                targetH = 0;
-
-                if (AtPose(pos)) {
-                    step = 2;
-                }
-                break;
+                DriveTo(10, 10, 0);
+                step = (AtPose(pos)) ? 2 : step;
+            break;
             case 2:
-            targetX = 20;
-            targetY = 5;
-            targetH = 90;
-
-            if (AtPose(pos)) {
-                step = 3;
-            }
+                DriveTo(20, 5, 90);
+                step = (AtPose(pos)) ? 3 : step;
             break;
             case 3:
-                targetX = 5;
-                targetY = 20;
-                targetH = -90;
-
-                if (AtPose(pos)) {
-                step = 4;
-                }
-                break;
+                DriveTo(5, 20, -90);
+                step = (AtPose(pos)) ? 4 : step;
+            break;
             case 4:
-                targetX = 0;
-                targetY = 0;
-                targetH = 0;
-                break;
-
+                DriveTo(0, 0, 0);
+            break;
         }
-
-        xController.setTarget(targetX);
-        yController.setTarget(targetY);
-        hController.setTarget(targetH);
-
-        xController.update(pos.x);
-        yController.update(pos.y);
-        hController.update(pos.h);
-
-        float hRads = (pos.h * M_PI) / 180;
-
-        float X = xController.output * cos(hRads) + yController.output * sin(hRads);
-        float Y = -xController.output * sin(hRads) + yController.output * cos(hRads);
-
-        SetMotorPowers(X, Y, -hController.output);
-
-        FEHLog::printf("Xo:%.2f Yo:%.2f Ho:%.2f\n", xController.output * 1.0f, yController.output * 1.0f, hController.output * -1.0f);
-        FEHLog::printf("X:%.2f Y:%.2f H:%.2f\n", X, Y, pos.h);
-  
+        // 10ms sleep to slow looptime a little
         Sleep(10);
     }
 

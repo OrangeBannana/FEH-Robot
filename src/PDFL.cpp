@@ -34,7 +34,4 @@ void PDFL::update(float value) {
     output = P + D + kF;
 
     output = (abs(output) >= kL) ? output : ((output * kL) / abs(output));
-
-    output = max(output, -1);
-    output = min(output, 1);
 }

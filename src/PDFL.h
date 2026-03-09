@@ -2,7 +2,7 @@
 
 // PDFL controller is a alternative to a PID controller that omits the I term
 // and achieves similar functionality with a F and L term
-// Takes in an arbitrary current system value and target value and returns a output [-1, 1]
+// Takes in an arbitrary current system value and target value and returns a arbitrary output
 // to try and move system state such that the current value = target value
 
 // kP -> P gain
