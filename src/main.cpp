@@ -1,31 +1,48 @@
+// FEH Library Imports
 #include <FEHLCD.h>
 #include <FEHIO.h>
 #include <FEHUtility.h>
 #include <FEHMotor.h>
 #include <FEHLog.h>
 
+// Local Class Imports
 #include "FEHOTOS.h"
-#include "PIDF.h"
+#include "PDFL.h"
 
+// Constant Definition
 #define M_PI 3.14159265358979323846
 
+// Create Motor Objects
 FEHMotor FL(FEHMotor::Motor1,6.0);
 FEHMotor FR(FEHMotor::Motor2,6.0);
 FEHMotor BM(FEHMotor::Motor0,6.0);
 
-// Weight Biases &  motor direction normalization
+// Signs to adjust motor directions
+// Should be configured such that X+ is right and Y+ is forward
+// when passing drive vectors to robot
 double FLsign = -1;
-double FRsign = -0.95;
-double BMsign = -0.90;
+double FRsign = -1;
+double BMsign = -1;
 
+// Weights to account for weight distribution and geometric imperfections
+double FLsign = 1;
+double FRsign = 0.95;
+double BMsign = 0.90;
+
+// Boolean to enable or disable using biases when driving
+bool useBiases = true;
+
+// PID controllers
 PIDF xController(1.0, 0, 0, 0);
 PIDF yController(1.0, 0, 0, 0);
 PIDF hController(0.085, 0, 0, 0);
 
-float targetX = 10;
-float targetY = 10;
+// Initial Target Positions
+float targetX = 0;
+float targetY = 0;
 float targetH = 0;
 
+// Assign motor powers with X Y and Theta velocities arbitrary units [-1, 1]
 void SetMotorPowers(double vX, double vY, double vTheta) {
     // Y+ is forward
     // X+ is right
@@ -48,6 +65,7 @@ void SetMotorPowers(double vX, double vY, double vTheta) {
 
 }
 
+// Returns true if the robot is at its position within a tolerance
 boolean AtPose(OTOSPose pose) {
     bool atHeading = 0.5 >= abs(targetH - pose.h);
 
