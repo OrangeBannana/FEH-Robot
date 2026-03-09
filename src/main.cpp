@@ -9,9 +9,6 @@
 #include "FEHOTOS.h"
 #include "PDFL.h"
 
-// Constant Definition
-#define M_PI 3.14159265358979323846
-
 // Create Motor Objects
 FEHMotor FL(FEHMotor::Motor1,6.0);
 FEHMotor FR(FEHMotor::Motor2,6.0);
@@ -25,9 +22,9 @@ double FRsign = -1;
 double BMsign = -1;
 
 // Weights to account for weight distribution and geometric imperfections
-double FLsign = 1;
-double FRsign = 0.95;
-double BMsign = 0.90;
+double FLweight = 1;
+double FRweight = 0.95;
+double BMweight = 0.90;
 
 // Boolean to enable or disable using biases when driving
 bool useBiases = true;
@@ -63,11 +60,11 @@ void DriveTo(double X, double Y, double Theta) {
     yController.update(pos.y);
     hController.update(pos.h);
 
-    float hRads = (pos.h * M_PI) / 180;
+    float hRads = (pos.h * PI) / 180;
 
     float vX = xController.output * cos(hRads)  + yController.output * sin(hRads);
     float vY = -xController.output * sin(hRads) + yController.output * cos(hRads);
-    float vTheta = hController.output;
+    float vTheta = -hController.output;
 
     double BMpower = -vX + vTheta;
     double FRpower = (1.0/2.0) * vX - (sqrt(3) / 2) * vY + vTheta;
@@ -110,7 +107,7 @@ void ERCMain()
     OTOS.calibrateImu();
 
     Sleep(10.0);
-    
+
     int step = 1;
     while (true) {
         OTOS.getPosition(pos);
