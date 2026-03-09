@@ -33,9 +33,9 @@ double BMsign = 0.90;
 bool useBiases = true;
 
 // PID controllers
-PIDF xController(1.0, 0, 0, 0);
-PIDF yController(1.0, 0, 0, 0);
-PIDF hController(0.085, 0, 0, 0);
+PDFL xController(1.0, 0, 0, 0);
+PDFL yController(1.0, 0, 0, 0);
+PDFL hController(0.085, 0, 0, 0);
 
 // Initial Target Positions
 float targetX = 0;
@@ -140,9 +140,9 @@ void ERCMain()
         yController.setTarget(targetY);
         hController.setTarget(targetH);
 
-        xController.update(pos.x,TimeNow() * 1000.0f);
-        yController.update(pos.y,TimeNow() * 1000.0f);
-        hController.update(pos.h,TimeNow() * 1000.0f);
+        xController.update(pos.x);
+        yController.update(pos.y);
+        hController.update(pos.h);
 
         float hRads = (pos.h * M_PI) / 180;
 

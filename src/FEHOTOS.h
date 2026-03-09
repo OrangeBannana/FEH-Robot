@@ -1,4 +1,4 @@
-#pragma once
+// Ported from Sparkfun implementation
 #include <Wire.h>
 #include <stdint.h>
 

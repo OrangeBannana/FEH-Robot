@@ -1,4 +1,4 @@
-// Implimentation of a PDFL controller
+// implementation of a PDFL controller
 
 // PDFL controller is a alternative to a PID controller that omits the I term
 // and achieves similar functionality with a F and L term
@@ -46,6 +46,8 @@ class PDFL {
         void setTarget(float target);
         void update(float value);
 
+        float output = 0;
+
     private:
         // Constants
         float
@@ -58,7 +60,6 @@ class PDFL {
             target = 0,
             time = TimeNow() * S_TO_MS,
             error = 0,
-            output = 0,
             P = 0,
             D = 0;
         // Track Previous Iteration State
