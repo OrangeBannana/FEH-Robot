@@ -1,0 +1,20 @@
+{
+    "files": [
+        {
+            "path": "scripts/bootstrap.py",
+            "sha256": "C298F0DB85BD464907AC25546A0CD7B6B1318FA874A7AEE77D55B491821E3CEA"
+        },
+        {
+            "path": "platformio.ini",
+            "sha256": "049BBB1F5F427F1003AEFAB913AFB2BF922C33DAF122BF2068FA0DE64A59B42F"
+        },
+        {
+            "path": "scripts/clear_libs_on_new_version.py",
+            "sha256": "0A7E1D1E1904524634DBE12AE800E526577ED39FA8D3CA9A9E183E169BDE497C"
+        },
+        {
+            "path": "scripts/release_serial_port.py",
+            "sha256": "C2B08AFC60510F0D237FC5275D1D0FB0359D5F049F70C24BF70543E99F58EEDA"
+        }
+    ]
+}
