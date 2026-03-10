@@ -11,9 +11,9 @@
 #include "PDFL.h"
 
 // Create Motor Objects
-FEHMotor FL(FEHMotor::Motor1,6.0);
-FEHMotor FR(FEHMotor::Motor2,6.0);
-FEHMotor BM(FEHMotor::Motor0,6.0);
+FEHMotor FL(FEHMotor::Motor1,7.0);
+FEHMotor FR(FEHMotor::Motor2,7.0);
+FEHMotor BM(FEHMotor::Motor0,7.0);
 
 // Signs to adjust motor directions
 // Should be configured such that X+ is right and Y+ is forward
@@ -31,7 +31,7 @@ double BMweight = 0.90;
 bool useBiases = true;
 
 // PID controllers
-PDFL tController(1.0, 0, 0, 0);
+PDFL tController(1.2, 0, 0, 0);
 PDFL hController(0.085, 0, 0, 0);
 
 // Initial Target Positions
@@ -45,16 +45,26 @@ OTOSPose preRampPose;
 OTOSPose posOffset = {1.915, -1.76847, 0.0};
 
 // Robot positions for tasks
-OTOSPose clearRampPos = {0, -12, 0};
 OTOSPose startPos = {0.3-.25, -5.18+0.5, -129.0};
-OTOSPose buttonPos = {6.72, -20.47, 0};
-OTOSPose upRampPos = {6.72, -20.47, 0};
-OTOSPose readLightPos = {6.72, -20.47, 0};
-OTOSPose blueButtonPos = {6.72, -20.47, 0};
-OTOSPose redButtonPos = {6.72, -20.47, 0};
+OTOSPose buttonPos = {-2.72, -4.95, -155.0};
+OTOSPose upRampPos = {-2.15, -40.4, -90};
+OTOSPose readLightPos = {13.30-1.25, -39.80+1, -90};
+OTOSPose blueButtonPos = {13.30-0.5, -39.80+7, -90};
+OTOSPose redButtonPos = {readLightPos.x + 5, readLightPos.y - 0.5, -90};
 OTOSPose downRampPos = {6.72, -20.47, 0};
 OTOSPose finishPos = {6.72, -20.47, 0};
 
+AnalogInputPin CDS(FEHIO::Pin0);
+float redVal = 0.415;
+float offVal = 3.162;
+float blueVal = 0.0;
+
+struct timer {
+    float startTime;
+    float endTime;
+};
+
+timer startBTNTimer = {0.0, 0.0};
 
 // Drive to a global coordinate using PID
 void DriveTo(double X, double Y, double Theta) {
@@ -115,9 +125,14 @@ boolean AtPose(OTOSPose pose) {
     return atHeading && atLocation;
 }
 
+void zeroMotors() {
+    BM.SetPercent(0);
+    FR.SetPercent(0);
+    FL.SetPercent(0);
+}
+
 void ERCMain()
 {   
-    TestGUI();
     LCD.WriteLine("Initializing BLE Logging...");
     FEHLog::enableBLE(152);
     LCD.WriteLine("BLE Logging Initialized");
@@ -148,37 +163,52 @@ void ERCMain()
         OTOS.getPosition(pos);
 
         switch (step) {
-            // Drive back to avoid ramp
-            case 0:
-                DriveTo(clearRampPos.x, clearRampPos.y, clearRampPos.h);
-                step = (AtPose(pos)) ? 2 : step;
-            break;
-            // Drive to start light
+
             case 1:
                 DriveTo(startPos.x, startPos.y, startPos.h);
-            break;
-            // Press Start Button
+                if (AtPose(pos)) {
+                    step = 2;
+                }
+                break;
+
+            case 2:
+                DriveTo(startPos.x, startPos.y, startPos.h);
+                if (abs(redVal - CDS.Value()) < 0.35) {
+                    startBTNTimer.startTime = TimeNow();
+                    step = 3;
+                }
+                break;
+
             case 3:
+                DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
+                if (TimeNow() - startBTNTimer.startTime >= 1.0) {
+                    step = 4;
+                }
+                break;
 
-            break;
-            // Go Up Ramp
             case 4:
-
+                DriveTo(upRampPos.x, upRampPos.y, upRampPos.h);
+                if (AtPose(pos)) {
+                    zeroMotors();
+                    Sleep(1.0);
+                    step = 5;
+                }
             break;
-            // Go to light
+
             case 5:
-
+                DriveTo(readLightPos.x, readLightPos.y, readLightPos.h);
+                if (AtPose(pos)) {
+                    zeroMotors();
+                    Sleep(1.0);
+                    step = 6;
+                }
             break;
-            // Press Button
+
             case 6:
-
+                DriveTo(redButtonPos.x, redButtonPos.y, redButtonPos.h);
             break;
-            // Go To Ramp
+            
             case 7:
-
-            break;
-            // Go To Final Button
-            case 8:
 
             break;
         }
