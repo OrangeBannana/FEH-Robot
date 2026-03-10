@@ -168,7 +168,7 @@ void ERCMain()
                 BM.SetPercent(0);
                 Sleep(1.0);
                 rcsPoseLast = RCS.RequestPosition();
-                while (rcsPoseLast->x < 0) {
+                while (rcsPoseLast->x <= 0.0) {
                     rcsPoseLast = RCS.RequestPosition();
                 }
                 Sleep(1.0);
@@ -180,7 +180,6 @@ void ERCMain()
                 LCD.WriteLine(rcsPoseLast->y);
                 LCD.WriteLine(rcsPoseFirst->y);
                 FEHLog::printf("X: %.2f Y: %.2f H: %.2f", newX, newY, newH);
-                Sleep(10.0);
                 newH = preRampPose.h + (rcsPoseLast->heading - rcsPoseFirst->heading);
                 postRampPose = {newX, newY, newH};
                 OTOS.setPosition(postRampPose);
