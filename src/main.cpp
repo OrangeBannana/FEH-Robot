@@ -4,6 +4,7 @@
 #include <FEHUtility.h>
 #include <FEHMotor.h>
 #include <FEHLog.h>
+#include <FEHRCS.h>
 
 // Local Class Imports
 #include "FEHOTOS.h"
@@ -40,6 +41,11 @@ float targetH = 0;
 
 // Robot position
 OTOSPose pos;
+OTOSPose preRampPose;
+OTOSPose posOffset = {1.915, -1.76847, 0.0};
+
+RCSPose* rcsPoseLast;
+RCSPose* rcsPoseFirst;
 
 // Drive to a global coordinate using PID
 void DriveTo(double X, double Y, double Theta) {
@@ -50,7 +56,7 @@ void DriveTo(double X, double Y, double Theta) {
     // For both robot and world coordinates
     // Y+ is forward
     // X+ is right
-    
+
     float tError = sqrt(pow(targetX - pos.x, 2) + pow(targetY - pos.y, 2));
 
     tController.setTarget(0);
@@ -101,34 +107,88 @@ boolean AtPose(OTOSPose pose) {
 }
 
 void ERCMain()
-{
+{   
+    FEHLog::enableBLE(152);
+
+    RCS.InitializeTouchMenu("0800A1KDN");
+    LCD.WriteLine("RCS Started, press to continue");
+    LCD.WaitForTouchToStart();
+    LCD.WaitForTouchToEnd();
+
+
     FEHLog::enableBLE(152);
 
     OTOS.begin();
     OTOS.resetTracking();
     OTOS.calibrateImu();
+    OTOS.setOffset(posOffset);
 
-    Sleep(10.0);
+    LCD.WriteLine("OTOS initialized, press to continue");
+    LCD.WaitForTouchToStart();
+    LCD.WaitForTouchToEnd();
 
     int step = 1;
+
+    float newX, newY, newH;
+    OTOSPose postRampPose;
+
     while (true) {
         OTOS.getPosition(pos);
 
         switch (step) {
             case 1:
-                DriveTo(10, 10, 0);
+                DriveTo(-1, -12, 0);
                 step = (AtPose(pos)) ? 2 : step;
             break;
             case 2:
-                DriveTo(20, 5, 90);
+                DriveTo(10, -12, 0);
                 step = (AtPose(pos)) ? 3 : step;
             break;
             case 3:
-                DriveTo(5, 20, -90);
-                step = (AtPose(pos)) ? 4 : step;
+                FL.SetPercent(0);
+                FR.SetPercent(0);
+                BM.SetPercent(0);
+                Sleep(1.0);
+                rcsPoseFirst = RCS.RequestPosition();
+                while (rcsPoseFirst->x < 0) {
+                    rcsPoseFirst = RCS.RequestPosition();
+                }
+                Sleep(1.0);
+                OTOS.getPosition(preRampPose);
+                Sleep(1.0);
+                step = 4;
             break;
             case 4:
-                DriveTo(0, 0, 0);
+                DriveTo(10, 10, 0);
+                step = (AtPose(pos)) ? 5 : step;
+            break;
+            case 5:
+                FL.SetPercent(0);
+                FR.SetPercent(0);
+                BM.SetPercent(0);
+                Sleep(1.0);
+                rcsPoseLast = RCS.RequestPosition();
+                while (rcsPoseLast->x < 0) {
+                    rcsPoseLast = RCS.RequestPosition();
+                }
+                Sleep(1.0);
+                newX = preRampPose.x + (rcsPoseLast->x - rcsPoseFirst->x);
+                newY = preRampPose.y + (rcsPoseLast->y - rcsPoseFirst->y);
+                newH = preRampPose.h + (rcsPoseLast->heading - rcsPoseFirst->heading);
+                FEHLog::printf("Y: %.2f %.2f %.2f", preRampPose.y, rcsPoseLast->y, rcsPoseFirst->y);
+                LCD.WriteLine(preRampPose.y);
+                LCD.WriteLine(rcsPoseLast->y);
+                LCD.WriteLine(rcsPoseFirst->y);
+                FEHLog::printf("X: %.2f Y: %.2f H: %.2f", newX, newY, newH);
+                Sleep(10.0);
+                newH = preRampPose.h + (rcsPoseLast->heading - rcsPoseFirst->heading);
+                postRampPose = {newX, newY, newH};
+                OTOS.setPosition(postRampPose);
+                Sleep(1.0);
+                step = 6;
+            break;
+            case 6:
+                DriveTo(10-15.875000, 10+11.500000 - 8.5, 90);
             break;
         }
         // 10ms sleep to slow looptime a little
