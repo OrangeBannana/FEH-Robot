@@ -27,7 +27,7 @@ double FLweight = 1;
 double FRweight = 0.95;
 double BMweight = 0.90;
 
-// Boolean to enable or disable using biases when driving
+// Boolean to enable or disable using biases when driving NOT IMPLEMENTED
 bool useBiases = true;
 
 // PID controllers
@@ -39,13 +39,22 @@ float targetX = 0;
 float targetY = 0;
 float targetH = 0;
 
-// Robot position
+// Robot position tracking
 OTOSPose pos;
 OTOSPose preRampPose;
 OTOSPose posOffset = {1.915, -1.76847, 0.0};
 
-RCSPose* rcsPoseLast;
-RCSPose* rcsPoseFirst;
+// Robot positions for tasks
+OTOSPose clearRampPos = {0, -12, 0};
+OTOSPose startPos = {0.3-.25, -5.18+0.5, -129.0};
+OTOSPose buttonPos = {6.72, -20.47, 0};
+OTOSPose upRampPos = {6.72, -20.47, 0};
+OTOSPose readLightPos = {6.72, -20.47, 0};
+OTOSPose blueButtonPos = {6.72, -20.47, 0};
+OTOSPose redButtonPos = {6.72, -20.47, 0};
+OTOSPose downRampPos = {6.72, -20.47, 0};
+OTOSPose finishPos = {6.72, -20.47, 0};
+
 
 // Drive to a global coordinate using PID
 void DriveTo(double X, double Y, double Theta) {
@@ -108,86 +117,69 @@ boolean AtPose(OTOSPose pose) {
 
 void ERCMain()
 {   
+    TestGUI();
+    LCD.WriteLine("Initializing BLE Logging...");
     FEHLog::enableBLE(152);
+    LCD.WriteLine("BLE Logging Initialized");
 
-    RCS.InitializeTouchMenu("0800A1KDN");
-    LCD.WriteLine("RCS Started, press to continue");
-    LCD.WaitForTouchToStart();
-    LCD.WaitForTouchToEnd();
-
-
-    FEHLog::enableBLE(152);
-
+    LCD.WriteLine("Initializing OTOS, do NOT touch.");
+    Sleep(1.0);
     OTOS.begin();
     OTOS.resetTracking();
     OTOS.calibrateImu();
     OTOS.setOffset(posOffset);
-
+    Sleep(1.0);
     LCD.WriteLine("OTOS initialized, press to continue");
+
     LCD.WaitForTouchToStart();
     LCD.WaitForTouchToEnd();
 
-    int step = 1;
+    // Loop for position output for testing and finding target field positions
+    // while (true) {
+    //     OTOS.getPosition(pos);
+    //     FEHLog::printf("X: %.2fY: %.2fH: %.2f", pos.x, pos.y, pos.h);
+    //     Sleep(100);
+    // }
 
-    float newX, newY, newH;
-    OTOSPose postRampPose;
+    // State counter
+    int step = 1;
 
     while (true) {
         OTOS.getPosition(pos);
 
         switch (step) {
-            case 1:
-                DriveTo(-1, -12, 0);
+            // Drive back to avoid ramp
+            case 0:
+                DriveTo(clearRampPos.x, clearRampPos.y, clearRampPos.h);
                 step = (AtPose(pos)) ? 2 : step;
             break;
-            case 2:
-                DriveTo(10, -12, 0);
-                step = (AtPose(pos)) ? 3 : step;
+            // Drive to start light
+            case 1:
+                DriveTo(startPos.x, startPos.y, startPos.h);
             break;
+            // Press Start Button
             case 3:
-                FL.SetPercent(0);
-                FR.SetPercent(0);
-                BM.SetPercent(0);
-                Sleep(1.0);
-                rcsPoseFirst = RCS.RequestPosition();
-                while (rcsPoseFirst->x < 0) {
-                    rcsPoseFirst = RCS.RequestPosition();
-                }
-                Sleep(1.0);
-                OTOS.getPosition(preRampPose);
-                Sleep(1.0);
-                step = 4;
+
             break;
+            // Go Up Ramp
             case 4:
-                DriveTo(10, 10, 0);
-                step = (AtPose(pos)) ? 5 : step;
+
             break;
+            // Go to light
             case 5:
-                FL.SetPercent(0);
-                FR.SetPercent(0);
-                BM.SetPercent(0);
-                Sleep(1.0);
-                rcsPoseLast = RCS.RequestPosition();
-                while (rcsPoseLast->x <= 0.0) {
-                    rcsPoseLast = RCS.RequestPosition();
-                }
-                Sleep(1.0);
-                newX = preRampPose.x + (rcsPoseLast->x - rcsPoseFirst->x);
-                newY = preRampPose.y + (rcsPoseLast->y - rcsPoseFirst->y);
-                newH = preRampPose.h + (rcsPoseLast->heading - rcsPoseFirst->heading);
-                FEHLog::printf("Y: %.2f %.2f %.2f", preRampPose.y, rcsPoseLast->y, rcsPoseFirst->y);
-                LCD.WriteLine(preRampPose.y);
-                LCD.WriteLine(rcsPoseLast->y);
-                LCD.WriteLine(rcsPoseFirst->y);
-                FEHLog::printf("X: %.2f Y: %.2f H: %.2f", newX, newY, newH);
-                newH = preRampPose.h + (rcsPoseLast->heading - rcsPoseFirst->heading);
-                postRampPose = {newX, newY, newH};
-                OTOS.setPosition(postRampPose);
-                Sleep(1.0);
-                step = 6;
+
             break;
+            // Press Button
             case 6:
-                DriveTo(10-15.875000, 10+11.500000 - 8.5, 90);
+
+            break;
+            // Go To Ramp
+            case 7:
+
+            break;
+            // Go To Final Button
+            case 8:
+
             break;
         }
         // 10ms sleep to slow looptime a little
