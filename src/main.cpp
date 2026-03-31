@@ -57,15 +57,15 @@ OTOSPose readLightPos = {6.12, -18.54, -177},
          blueButtonPos = {7.79, -23.0, -177},
          redButtonPos = {-0.3, -25.0, -177},
          downRampPos = {9.70, -3.23, 90},
-         finishPos = {40.68, -2.51, 90};
+         finishPos = {43.68, -2.0, 90};
 
 // Robot positions for door milestone
-OTOSPose preOpenPose = {11, -16.34, -90},
-         openPose = {11, -21.55, -90},
-         transitionPose = {8.06, -21.85, -90},
-         preClosePose = {11, -22.38, -90},
-         closedPose = {11, -17.6, -90},
-         leavePose = {8.06, -18, -90};
+OTOSPose preOpenPose = {12, -16.34, -90},
+         openPose = {12, -21.9, -90},
+         transitionPose = {9.06, -21.85, -90},
+         preClosePose = {12, -22.85, -90},
+         closedPose = {12, -17.6, -90},
+         leavePose = {9.06, -18, -90};
 
 AnalogInputPin CDS(FEHIO::Pin0);
 float redVal = 0.415;
@@ -264,7 +264,7 @@ void ERCMain()
             break;
 
             case 6:
-                DriveAt(-0.2, 0.25, 0.0);
+                DriveAt(-0.2, 0.25, -0.01);
                 if (abs(vel.x) < 0.01 &&  abs(vel.y) < 0.01 && abs(vel.h) < 0.01 && TimeNow() - relocTimer.startTime >= 2.0) {
                     OTOS.setPosition(zeroPos);
                     zeroMotors();
