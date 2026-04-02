@@ -1,4 +1,4 @@
-// implementation of a PDFL controller
+// Implementation of a PDFL controller
 
 // PDFL controller is a alternative to a PID controller that omits the I term
 // and achieves similar functionality with a F and L term

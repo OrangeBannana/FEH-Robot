@@ -255,7 +255,6 @@ void ERCMain()
     LCD.WriteLine("Connecting to RCS");
     RCS.InitializeTouchMenu("0800A2XNH");
     LCD.WriteLine("RCS Connected");
-    LCD.WriteLine("Goofy Goober fr");
 
     LCD.WriteLine("Waiting for press...");
     LCD.WaitForTouchToStart();
