@@ -11,6 +11,9 @@
 #include "FEHOTOS.h"
 #include "PDFL.h"
 
+// Enable test mode?
+bool testMode = false;
+
 // Create Motor Objects
 FEHMotor FL(FEHMotor::Motor2,7.0);
 FEHMotor FR(FEHMotor::Motor3,7.0);
@@ -63,14 +66,14 @@ OTOSPose zeroPos = {0.0, 0.0, 0.0},
          upRampPos = {-3.5, -40.4, 90},
          calibrationPos = {-2.75, -40.4, 90};
 
-// Robot positions for button milestone
+// Robot positions for button milestone OLD - RELATIVE TO OLD RELOCALIZATION
 OTOSPose readLightPos = {6.12, -18.54, -177},
          blueButtonPos = {7.79, -23.0, -177},
          redButtonPos = {-0.3, -25.0, -177},
          downRampPos = {9.70, -3.23, 90},
          finishPos = {43.68, -2.0, 90};
 
-// Robot positions for door milestone
+// Robot positions for door milestone OLD - RELATIVE TO OLD RELOCALIZATION
 OTOSPose preOpenPose = {12, -16.34, -90},
          openPose = {12, -21.9, -90},
          transitionPose = {9.06, -21.85, -90},
@@ -84,6 +87,10 @@ OTOSPose prePickupPos = {6.72, -14.06, -107},
          preRampPos = {-4.81, -16.50, -170.0},
          dropPose = {1.77, -1.60, 90};
 
+// Relocalization Poses
+OTOSPose relocStartPosOTOS;
+RCSPose *relocStartPosRCS, *relocEndPosRCS;
+
 
 
 float redVal = 0.415;
@@ -94,20 +101,21 @@ struct timer {
     public:
         float startTime;
 
+        void start(float length) {
+            startTime = TimeNow();
+            timerLength = length;
+        }
+    
+        bool isOver() {
+            return TimeNow() - startTime >= timerLength;
+        }
+    
+        float getTime() {
+            return TimeNow() - startTime;
+        }
+
     private:
-        float finalTime;
-        bool finished = false;
-
-    float getTime() {
-        if (finished) { return finalTime; }
-        else { return TimeNow() - startTime; }
-    }
-
-    void end() {
-        finished = true;
-        finalTime = TimeNow() - startTime;
-    }
-
+        float timerLength;
 };
 
 timer startBTNTimer;
@@ -209,40 +217,6 @@ void zeroMotors() {
 
 void ERCMain()
 {   
-    // 36 EW
-    // int oX = 0, oY = 0, codeBorderWidth = 14, codeElementWidth = 36;
-    // int codeSize = codeBorderWidth * 2 + codeElementWidth * 6;
-
-    // // Border Draw
-    // LCD.Clear();
-    // LCD.SetFontColor(WHITE);
-    // LCD.FillRectangle(oX, oY, codeSize, codeSize);
-
-    // int code[6][6] = {
-    //     {0, 0, 0, 0, 0, 0},
-    //     {0, 0, 0, 1, 1, 0},
-    //     {0, 0, 0, 1, 1, 0},
-    //     {0, 0, 0, 1, 0, 0},
-    //     {0, 1, 1, 0, 1, 0},
-    //     {0, 0, 0, 0, 0, 0},
-    // };
-    
-    // // Code Draw
-    // int drawX = oX + codeBorderWidth, drawY = oY + codeBorderWidth;
-
-    // for (int i = 0; i < 6; i++) {
-    //     drawX = oX + codeBorderWidth;
-    //     for (int k = 0; k < 6; k++) {
-    //         if (code[i][k] == 0) {
-    //             LCD.SetFontColor(BLACK);
-    //         } else {
-    //             LCD.SetFontColor(WHITE);
-    //         }
-    //         LCD.FillRectangle(drawX, drawY, codeElementWidth, codeElementWidth);
-    //         drawX += codeElementWidth;
-    //     }
-    //     drawY += codeElementWidth;
-    // }
 
     armServo.SetMin(750);
     armServo.SetMax(2000);
@@ -271,196 +245,148 @@ void ERCMain()
 
     LCD.WaitForTouchToStart();
     LCD.WaitForTouchToEnd();
+    LCD.Clear();
 
-    // Loop for position output for testing and finding target field positions
-    // while (true) {
-    //     OTOS.getPosition(pos);
-    //     FEHLog::printf("X: %.2fY: %.2fH: %.2f", pos.x, pos.y, pos.h);
-    //     Sleep(100);
-    // }
+    // Loop to print out positions from OTOS, runs IFF testMode
+    while (testMode) {
+        OTOS.getPosition(pos);
+        FEHLog::printf("X: %.2fY: %.2fH: %.2f", pos.x, pos.y, pos.h);
+        Sleep(100);
+    }
 
     // State counter
     int step = 1;
 
+    // Main objective switch statement
     while (true) {
+
+        // Update position and velocity
         OTOS.getPosition(pos);
         OTOS.getVelocity(vel);
 
         switch (step) {
-
+            
+            // Go to to start location
             case 1:
                 DriveTo(startPos.x, startPos.y, startPos.h);
                 if (AtPose()) step = 2;
-                break;
-
+            break;
+            
+            // Waiting for light to signal start
             case 2:
                 DriveTo(startPos.x, startPos.y, startPos.h);
                 if (abs(redVal - CDS.Value()) < 0.35) {
-                    startBTNTimer.startTime = TimeNow();
+                    startBTNTimer.start(1.0);
                     step = 3;
-                }
-                break;
-
-            case 3:
-                DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
-                if (TimeNow() - startBTNTimer.startTime >= 1.0) {
-                    step = 18;
-                }
-                break;
-
-            case 4:
-                DriveTo(upRampPos.x, upRampPos.y, upRampPos.h);
-                if (AtPose()) {
-                    relocTimer.startTime = TimeNow();
-                    zeroMotors();
-                    Sleep(1.0);
-                    step = 5;
                 }
             break;
             
-            case 5:
-                DriveAt(-0.1, 0.2, -0.00);
-                if (TimeNow() - relocTimer.startTime >= 4.0) step = 6;
-            break;
-
-            case 6:
-                DriveAt(-0.2, 0.25, 0.0);
-                if ((abs(vel.x) < 0.02 &&  abs(vel.y) < 0.02 && abs(vel.h) < 0.02 && TimeNow() - relocTimer.startTime >= 6.0) || TimeNow() - relocTimer.startTime >= 20.0) {
-                    OTOS.setPosition(zeroPos);
-                    zeroMotors();
-                    step = 22;
-                }
-            break;
-
-            case 7:
-                DriveTo(readLightPos.x, readLightPos.y, readLightPos.h);
-                if (AtPose()) {
-                    zeroMotors();
-                    Sleep(500);
-                    BTN2Timer.startTime = TimeNow();
-
-                    if (abs(redVal - CDS.Value()) < 0.35) {
-                        step = 8;
-                    } else {
-                        step = 9;
-                    }
-
-                }
-            break;
-            // Red BTN
-            case 8:
-                DriveTo(redButtonPos.x, redButtonPos.y, redButtonPos.h);
-                if (TimeNow() - BTN2Timer.startTime >= 4) {
-                    LCD.WriteLine("RED");
-                    step = 10;
-                }
-            break;
-            // Blue BTN
-            case 9:
-                DriveTo(blueButtonPos.x, blueButtonPos.y, blueButtonPos.h);
-                if (TimeNow() - BTN2Timer.startTime >= 4) {
-                    LCD.WriteLine("BLUE");
-                    step = 10;
-                }
-            break;
-            // Start of window task cases
-            case 12:
-                DriveTo(preOpenPose.x, preOpenPose.y, preOpenPose.h);
-                if (AtPose()) {
-                    openDoorTimer.startTime = TimeNow();
-                    step = 13;
-                }
-            break;
-
-            case 13:
-                DriveTo(openPose.x, openPose.y, openPose.h);
-                if (AtPose() || TimeNow() - openDoorTimer.startTime >= 2) step = 14;
-            break;
-
-            case 14:
-                DriveTo(transitionPose.x, transitionPose.y, transitionPose.h);
-                if (AtPose()) step = 15;
-            break;
-
-            case 15:
-                DriveTo(preClosePose.x, preClosePose.y, preClosePose.h);
-                if (AtPose()) {
-                    closeDoorTimer.startTime = TimeNow();
-                    step = 16;
-                }
-            break;
-
-            case 16:
-                DriveTo(closedPose.x, closedPose.y, closedPose.h);
-                if (AtPose() || TimeNow() - closeDoorTimer.startTime >= 2) step = 17;
-            break;
-
-            case 17:
-                DriveTo(leavePose.x, leavePose.y, leavePose.h);
-                if (AtPose()) step = 10;
-            break;
-
-            // Start of down ramp cases
-            case 10:
-                DriveTo(downRampPos.x, downRampPos.y, downRampPos.h);
-                if (AtPose()) step = 11; 
-            break;
-
-            case 11:
-                DriveTo(finishPos.x, finishPos.y, finishPos.h);
-            break;
-
-            case 18:
-                armServo.SetDegree(armDownPos);
-                DriveTo(prePickupPos.x, prePickupPos.y, prePickupPos.h);
-                if (AtPose()) {
-                    relocTimer.startTime = TimeNow();
-                    powerScale = 0.4;
-                    step = 19;
-                }
-            break;
-
-            case 19:
-                DriveAt(0,.25,0);
-                if ((abs(vel.x) < 0.02 &&  abs(vel.y) < 0.02 && abs(vel.h) < 0.02 && TimeNow() - relocTimer.startTime >= 2.0) || abs(pos.x) >= abs(pickupPos.x)) {
-                    step = 20;
-                    pickupTimer.startTime = TimeNow();
-                    zeroMotors();
-                }
-            break;
-
-            case 20:
-                armServo.SetDegree(armUpPos);
-                if (TimeNow() - pickupTimer.startTime >= 1.0) {
-                    powerScale = 1;
-                    step = 21;
-                }
-            break;
-
-            case 21:
-                DriveTo(preRampPos.x, preRampPos.y, preRampPos.h);
-                if (AtPose()) {
+            // Pressing Start Button
+            case 3:
+                DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
+                if (startBTNTimer.isOver()) {
                     step = 4;
                 }
             break;
 
-            case 22:
-                DriveTo(dropPose.x, dropPose.y, dropPose.h);
+            // Go to position to pickup bucket and move arm down to be ready
+            case 4:
+            armServo.SetDegree(armDownPos);
+            DriveTo(prePickupPos.x, prePickupPos.y, prePickupPos.h);
                 if (AtPose()) {
-                    pickupTimer.startTime = TimeNow();
-                    step = 23;
-                }
-            break;
-
-            case 23:
-                DriveTo(dropPose.x, dropPose.y, dropPose.h);
-                armServo.SetDegree(armDropPos);
-                if (TimeNow() - pickupTimer.startTime >= 1) {
-                    step = 24;
+                    relocTimer.start(2.0);
+                    powerScale = 0.4;
+                    step = 5;
                 }
             break;
             
-            case 24:
+            // Slowly drive forward into bucket, if robot is stopped or x coordinate goes past bucket position then go to next state
+            case 5:
+                DriveAt(0,.25,0);
+                if ((abs(vel.x) < 0.02 &&  abs(vel.y) < 0.02 && abs(vel.h) < 0.02 && relocTimer.isOver()) || abs(pos.x) >= abs(pickupPos.x)) {
+                    step = 6;
+                    pickupTimer.startTime = TimeNow();
+                    zeroMotors();
+                }
+            break;
+
+            // Pickup up (wait time to wait for servo to move)
+            case 6:
+                armServo.SetDegree(armUpPos);
+                if (TimeNow() - pickupTimer.startTime >= 0.5) {
+                    powerScale = 1;
+                    step = 7;
+                }
+            break;
+            
+            // Position before going up the ramp
+            case 7:
+                DriveTo(preRampPos.x, preRampPos.y, preRampPos.h);
+                if (AtPose()) {
+                    zeroMotors();
+                    relocTimer.start(1);
+                    step = 8;
+                }
+            break;
+            
+            // Wait and read RCS position
+            case 8:
+                if (relocTimer.isOver()) {
+                    OTOS.getPosition(relocStartPosOTOS);
+                    relocStartPosRCS = RCS.Position();
+                    step = 9;
+                }
+            
+            // Drive up ramp
+            case 9:
+                DriveTo(upRampPos.x, upRampPos.y, upRampPos.h);
+                if (AtPose()) {
+                    zeroMotors();
+                    relocTimer.start(1);
+                    step = 10;
+                }
+            break;
+            
+            // Relocalize with RCS
+            case 10:
+                if (relocTimer.isOver()) {
+                    relocEndPosRCS = RCS.Position();
+
+                    // Find Pos Difference in RCS
+                    float diffX = relocEndPosRCS->x - relocStartPosRCS->x;
+                    float diffY = relocEndPosRCS->y - relocStartPosRCS->y;
+                    float diffH = relocEndPosRCS->heading - relocStartPosRCS->heading;
+
+                    // Add pos diff to initial OTOS pos; RCS X+ & Y+ -> OTOS X- Y-
+                    float newX = relocStartPosOTOS.x - diffX;
+                    float newY = relocStartPosOTOS.y - diffY;
+                    float newH = relocStartPosOTOS.h + diffH;
+
+                    // Assign new pos to OTOS
+                    OTOSPose newPos = {newX, newY, newH};
+                    OTOS.setPosition(newPos);
+
+                    step = 11;
+                }
+            break;
+            
+            case 11:
+                DriveTo(dropPose.x, dropPose.y, dropPose.h);
+                if (AtPose()) {
+                    pickupTimer.start(1.0);
+                    step = 12;
+                }
+            break;
+            
+            case 12:
+                DriveTo(dropPose.x, dropPose.y, dropPose.h);
+                armServo.SetDegree(armDropPos);
+                if (pickupTimer.isOver()) {
+                    step = 13;
+                }
+            break;
+            
+            case 13:
                 DriveTo(dropPose.x, dropPose.y, dropPose.h);
             break;
 
@@ -469,4 +395,4 @@ void ERCMain()
         Sleep(10);
     }
 
-}// FEH Library Imports
+}
