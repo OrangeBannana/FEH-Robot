@@ -99,7 +99,6 @@ float blueVal = 0.0;
 
 struct timer {
     public:
-        float startTime;
 
         void start(float length) {
             startTime = TimeNow();
@@ -115,9 +114,11 @@ struct timer {
         }
 
     private:
+        float startTime;
         float timerLength;
 };
 
+timer freeTimer;
 timer startBTNTimer;
 timer relocTimer;
 timer BTN2Timer;
@@ -215,6 +216,23 @@ void zeroMotors() {
     FL.SetPercent(0);
 }
 
+void logMode() {
+    LCD.Clear();
+    zeroMotors();
+    OTOS.getPosition(pos);
+
+    LCD.WriteLine("X:");
+    LCD.WriteLine(pos.x);
+
+    LCD.WriteLine("Y:");
+    LCD.WriteLine(pos.y);
+
+    LCD.WriteLine("H:");
+    LCD.WriteLine(pos.h);
+
+    FEHLog::printf("X: %.2fY: %.2fH: %.2f", pos.x, pos.y, pos.h);
+    Sleep(300);
+}
 void ERCMain()
 {   
 
@@ -241,21 +259,22 @@ void ERCMain()
     OTOS.calibrateImu();
     OTOS.setOffset(posOffset);
     Sleep(1.0);
-    LCD.WriteLine("OTOS initialized, press to continue");
+    LCD.WriteLine("OTOS initialized");
+    LCD.WriteLine("Press to continue");
+    LCD.WriteLine("Hold 5 seconds to enter logging mode");
 
     LCD.WaitForTouchToStart();
+    freeTimer.start(5.0);
     LCD.WaitForTouchToEnd();
-    LCD.Clear();
-
-    // Loop to print out positions from OTOS, runs IFF testMode
-    while (testMode) {
-        OTOS.getPosition(pos);
-        FEHLog::printf("X: %.2fY: %.2fH: %.2f", pos.x, pos.y, pos.h);
-        Sleep(100);
-    }
 
     // State counter
     int step = 1;
+
+    if (freeTimer.isOver()) {
+        step = 0;
+    }
+    
+    LCD.Clear();
 
     // Main objective switch statement
     while (true) {
@@ -265,7 +284,12 @@ void ERCMain()
         OTOS.getVelocity(vel);
 
         switch (step) {
-            
+
+            // If log mode is enabled stay in case 0
+            case 0:
+                logMode();
+            break;
+
             // Go to to start location
             case 1:
                 DriveTo(startPos.x, startPos.y, startPos.h);
@@ -305,7 +329,7 @@ void ERCMain()
                 DriveAt(0,.25,0);
                 if ((abs(vel.x) < 0.02 &&  abs(vel.y) < 0.02 && abs(vel.h) < 0.02 && relocTimer.isOver()) || abs(pos.x) >= abs(pickupPos.x)) {
                     step = 6;
-                    pickupTimer.startTime = TimeNow();
+                    pickupTimer.start(0.5);
                     zeroMotors();
                 }
             break;
@@ -313,7 +337,7 @@ void ERCMain()
             // Pickup up (wait time to wait for servo to move)
             case 6:
                 armServo.SetDegree(armUpPos);
-                if (TimeNow() - pickupTimer.startTime >= 0.5) {
+                if (pickupTimer.isOver()) {
                     powerScale = 1;
                     step = 7;
                 }
@@ -350,6 +374,8 @@ void ERCMain()
             // Relocalize with RCS
             case 10:
                 if (relocTimer.isOver()) {
+
+                    // NOTE: We might not want to be relocalizing heading with RCS, imu may be more accurate ngl, this code is also not accurate since the rotation axis for the robot(OTOS) & RCS are different but for small heading changes it should not be significant.
                     relocEndPosRCS = RCS.Position();
 
                     // Find Pos Difference in RCS
@@ -366,7 +392,7 @@ void ERCMain()
                     OTOSPose newPos = {newX, newY, newH};
                     OTOS.setPosition(newPos);
 
-                    step = 11;
+                    step = 0;
                 }
             break;
             
