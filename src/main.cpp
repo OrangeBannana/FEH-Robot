@@ -244,9 +244,9 @@ void ERCMain()
     FEHLog::enableBLE(152);
     LCD.WriteLine("BLE Logging Initialized");
     
-    LCD.WriteLine("Connecting to RCS");
-    RCS.InitializeTouchMenu("0800A2XNH");
-    LCD.WriteLine("RCS Connected");
+    //LCD.WriteLine("Connecting to RCS");
+    //RCS.InitializeTouchMenu("0800A2XNH");
+    //LCD.WriteLine("RCS Connected");
 
     LCD.WriteLine("Waiting for press...");
     LCD.WaitForTouchToStart();
@@ -261,10 +261,10 @@ void ERCMain()
     Sleep(1.0);
     LCD.WriteLine("OTOS initialized");
     LCD.WriteLine("Press to continue");
-    LCD.WriteLine("Hold 5 seconds to enter logging mode");
+    LCD.WriteLine("Hold 2 seconds to enter logging mode");
 
     LCD.WaitForTouchToStart();
-    freeTimer.start(5.0);
+    freeTimer.start(2.0);
     LCD.WaitForTouchToEnd();
 
     // State counter
