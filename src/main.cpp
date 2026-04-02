@@ -208,45 +208,41 @@ void zeroMotors() {
 }
 
 void ERCMain()
-{   // 36 EW
-    int oX = 0, oY = 0, codeBorderWidth = 14, codeElementWidth = 36;
-    int codeSize = codeBorderWidth * 2 + codeElementWidth * 6;
+{   
+    // 36 EW
+    // int oX = 0, oY = 0, codeBorderWidth = 14, codeElementWidth = 36;
+    // int codeSize = codeBorderWidth * 2 + codeElementWidth * 6;
 
-    // Border Draw
-    LCD.Clear();
-    LCD.SetFontColor(WHITE);
-    LCD.FillRectangle(oX, oY, codeSize, codeSize);
+    // // Border Draw
+    // LCD.Clear();
+    // LCD.SetFontColor(WHITE);
+    // LCD.FillRectangle(oX, oY, codeSize, codeSize);
 
-    int code[6][6] = {
-        {0, 0, 0, 0, 0, 0},
-        {0, 0, 0, 1, 1, 0},
-        {0, 0, 0, 1, 1, 0},
-        {0, 0, 0, 1, 0, 0},
-        {0, 1, 1, 0, 1, 0},
-        {0, 0, 0, 0, 0, 0},
-    };
+    // int code[6][6] = {
+    //     {0, 0, 0, 0, 0, 0},
+    //     {0, 0, 0, 1, 1, 0},
+    //     {0, 0, 0, 1, 1, 0},
+    //     {0, 0, 0, 1, 0, 0},
+    //     {0, 1, 1, 0, 1, 0},
+    //     {0, 0, 0, 0, 0, 0},
+    // };
     
-    // Code Draw
-    int drawX = oX + codeBorderWidth, drawY = oY + codeBorderWidth;
+    // // Code Draw
+    // int drawX = oX + codeBorderWidth, drawY = oY + codeBorderWidth;
 
-    for (int i = 0; i < 6; i++) {
-        drawX = oX + codeBorderWidth;
-        for (int k = 0; k < 6; k++) {
-            if (code[i][k] == 0) {
-                LCD.SetFontColor(BLACK);
-            } else {
-                LCD.SetFontColor(WHITE);
-            }
-            LCD.FillRectangle(drawX, drawY, codeElementWidth, codeElementWidth);
-            drawX += codeElementWidth;
-        }
-        drawY += codeElementWidth;
-    }
-    Sleep(60.0);
-
-    // End of ArUco Code Display Test
-
-    Sleep(120.0);
+    // for (int i = 0; i < 6; i++) {
+    //     drawX = oX + codeBorderWidth;
+    //     for (int k = 0; k < 6; k++) {
+    //         if (code[i][k] == 0) {
+    //             LCD.SetFontColor(BLACK);
+    //         } else {
+    //             LCD.SetFontColor(WHITE);
+    //         }
+    //         LCD.FillRectangle(drawX, drawY, codeElementWidth, codeElementWidth);
+    //         drawX += codeElementWidth;
+    //     }
+    //     drawY += codeElementWidth;
+    // }
 
     armServo.SetMin(750);
     armServo.SetMax(2000);
