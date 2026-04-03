@@ -22,7 +22,7 @@ FEHMotor BM(FEHMotor::Motor1,7.0);
 // Create servo object
 FEHServo armServo(FEHServo::Servo0); 
 
-int armUpPos = 180, armDownPos = 110, armDropPos = 155;
+int armUpPos = 180, armDownPos = 105, armDropPos = 155;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -63,7 +63,7 @@ OTOSPose posOffset = {1.915, -1.76847, 0.0};
 OTOSPose zeroPos = {0.0, 0.0, 0.0},
          startPos = {0.3-.25, -5.18+0.5, -129.0},
          buttonPos = {-3.2, -4.5, -155.0},
-         upRampPos = {-3.5, -40.4, 90},
+         upRampPos = {-3.5, -40.4, 180},
          calibrationPos = {-2.75, -40.4, 90};
 
 // Robot positions for button milestone OLD - RELATIVE TO OLD RELOCALIZATION
@@ -85,11 +85,11 @@ OTOSPose preOpenPose = {12, -16.34, -90},
 OTOSPose prePickupPos = {6.72, -14.06, -107},
          pickupPos = {9.95, -15.1, -107},
          preRampPos = {-4.81, -16.50, -170.0},
-         dropPose = {1.77, -1.60, 90};
+         dropPose = {-5.32, -49.54, -180};
 
 // Relocalization Poses
 OTOSPose relocStartPosOTOS;
-RCSPose *relocStartPosRCS, *relocEndPosRCS;
+RCSPose relocStartPosRCS, relocEndPosRCS;
 
 
 
@@ -244,9 +244,9 @@ void ERCMain()
     FEHLog::enableBLE(152);
     LCD.WriteLine("BLE Logging Initialized");
     
-    //LCD.WriteLine("Connecting to RCS");
-    //RCS.InitializeTouchMenu("0800A2XNH");
-    //LCD.WriteLine("RCS Connected");
+    LCD.WriteLine("Connecting to RCS");
+    RCS.InitializeTouchMenu("0800A2XNH");
+    LCD.WriteLine("RCS Connected");
 
     LCD.WriteLine("Waiting for press...");
     LCD.WaitForTouchToStart();
@@ -275,6 +275,8 @@ void ERCMain()
     }
     
     LCD.Clear();
+
+    double time1;
 
     // Main objective switch statement
     while (true) {
@@ -348,16 +350,19 @@ void ERCMain()
                 DriveTo(preRampPos.x, preRampPos.y, preRampPos.h);
                 if (AtPose()) {
                     zeroMotors();
-                    relocTimer.start(1);
+                    time1 = TimeNow();
+                    relocTimer.start(3.0);
+                    Sleep(3.0);
                     step = 8;
                 }
             break;
             
             // Wait and read RCS position
             case 8:
-                if (relocTimer.isOver()) {
+                if (TimeNow() - time1 >= 3) {
                     OTOS.getPosition(relocStartPosOTOS);
-                    relocStartPosRCS = RCS.Position();
+                    relocStartPosRCS = * RCS.RequestPosition();
+
                     step = 9;
                 }
             
@@ -367,6 +372,7 @@ void ERCMain()
                 if (AtPose()) {
                     zeroMotors();
                     relocTimer.start(1);
+                    Sleep(1.0);
                     step = 10;
                 }
             break;
@@ -376,23 +382,31 @@ void ERCMain()
                 if (relocTimer.isOver()) {
 
                     // NOTE: We might not want to be relocalizing heading with RCS, imu may be more accurate ngl, this code is also not accurate since the rotation axis for the robot(OTOS) & RCS are different but for small heading changes it should not be significant.
-                    relocEndPosRCS = RCS.Position();
+                    relocEndPosRCS = * RCS.RequestPosition();
 
                     // Find Pos Difference in RCS
-                    float diffX = relocEndPosRCS->x - relocStartPosRCS->x;
-                    float diffY = relocEndPosRCS->y - relocStartPosRCS->y;
-                    float diffH = relocEndPosRCS->heading - relocStartPosRCS->heading;
+                    float diffX = relocEndPosRCS.x - relocStartPosRCS.x;
+                    float diffY = relocEndPosRCS.y - relocStartPosRCS.y;
+                    float diffH = relocEndPosRCS.heading - relocStartPosRCS.heading;
 
                     // Add pos diff to initial OTOS pos; RCS X+ & Y+ -> OTOS X- Y-
                     float newX = relocStartPosOTOS.x - diffX;
                     float newY = relocStartPosOTOS.y - diffY;
-                    float newH = relocStartPosOTOS.h + diffH;
+                    float newH = relocStartPosOTOS.h;
 
                     // Assign new pos to OTOS
                     OTOSPose newPos = {newX, newY, newH};
                     OTOS.setPosition(newPos);
 
-                    step = 0;
+                    // LCD.Clear();
+                    // LCD.WriteLine(relocStartPosRCS->x);
+                    // LCD.WriteLine(relocStartPosRCS->y);
+                    // LCD.WriteLine(relocStartPosRCS->heading);
+                    // LCD.WriteLine(relocEndPosRCS->x);
+                    // LCD.WriteLine(relocEndPosRCS->y);
+                    // LCD.WriteLine(relocEndPosRCS->heading);
+
+                    step = 11;
                 }
             break;
             
@@ -414,6 +428,10 @@ void ERCMain()
             
             case 13:
                 DriveTo(dropPose.x, dropPose.y, dropPose.h);
+            break;
+
+            case 14:
+                
             break;
 
         }
