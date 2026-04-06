@@ -22,7 +22,11 @@ FEHMotor BM(FEHMotor::Motor1,7.0);
 // Create servo object
 FEHServo armServo(FEHServo::Servo0); 
 
-int armUpPos = 180, armDownPos = 105, armDropPos = 155;
+int armUpPos = 180, 
+    armDownPos = 112,
+    armDropPos = 147,
+    armDownLeverPos = 90,
+    armCompostPos = 140;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -82,10 +86,16 @@ OTOSPose preOpenPose = {12, -16.34, -90},
          leavePose = {9.06, -18, -90};
 
 // Robot positions for apple bucket milestone
-OTOSPose prePickupPos = {6.72, -14.06, -107},
-         pickupPos = {9.95, -15.1, -107},
+OTOSPose prePickupPos = {6.72, -14.06, -109},
+         pickupPos = {9.95, -15.1, -109},
          preRampPos = {-4.81, -16.50, -170.0},
-         dropPose = {-5.32, -49.54, -180};
+         dropPose = {-5.32, -49.54, -175},
+         postDropPose = {-5.32, -45.54, -175},
+         preMidPose = {6.44, -49.57, -131},
+         preRightPose = {3.45, -57.66, -132.56},
+         preLeftPose = {10.39, -47.63, -130.0};
+
+int leverIndex = 4;
 
 // Relocalization Poses
 OTOSPose relocStartPosOTOS;
@@ -237,7 +247,7 @@ void ERCMain()
 {   
 
     armServo.SetMin(750);
-    armServo.SetMax(2000);
+    armServo.SetMax(2200);
     armServo.SetDegree(armUpPos);
 
     LCD.WriteLine("Initializing BLE Logging...");
@@ -270,7 +280,7 @@ void ERCMain()
     // State counter
     int step = 1;
 
-    if (freeTimer.isOver()) {
+    if (true) {
         step = 0;
     }
     
@@ -302,7 +312,7 @@ void ERCMain()
             case 2:
                 DriveTo(startPos.x, startPos.y, startPos.h);
                 if (abs(redVal - CDS.Value()) < 0.35) {
-                    startBTNTimer.start(1.0);
+                    startBTNTimer.start(0.5);
                     step = 3;
                 }
             break;
@@ -427,12 +437,47 @@ void ERCMain()
             break;
             
             case 13:
-                DriveTo(dropPose.x, dropPose.y, dropPose.h);
+                DriveTo(postDropPose.x, postDropPose.y, postDropPose.h);
+                if (AtPose()) {
+                    step = 14;
+                }
             break;
 
             case 14:
-                
+                switch(leverIndex) {
+                    case 4:
+                        leverIndex = RCS.GetLever();
+                    break;
+
+                    case 0:
+                        DriveTo(preLeftPose.x, preLeftPose.y, preLeftPose.h);
+                        if (AtPose()) {
+                            step = 15;
+                        }
+                    break;
+
+                    case 1:
+                    DriveTo(preMidPose.x, preMidPose.y, preMidPose.h);
+                    if (AtPose()) {
+                        step = 15;
+                    }
+                    break;
+
+                    case 2:
+                    DriveTo(preRightPose.x, preRightPose.y, preRightPose.h);
+                    if (AtPose()) {
+                        step = 15;
+                    }
+                break;
+
+                }
             break;
+
+            case 15:
+                armServo.SetDegree(armDownLeverPos);
+                zeroMotors();
+            break;
+
 
         }
         // 10ms sleep to slow looptime a little
