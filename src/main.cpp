@@ -23,10 +23,10 @@ FEHMotor BM(FEHMotor::Motor1,7.0);
 FEHServo armServo(FEHServo::Servo0); 
 
 int armUpPos = 180, 
-    armDownPos = 112,
+    armDownPos = 117.5,
     armDropPos = 147,
     armDownLeverPos = 90,
-    armCompostPos = 140;
+    armCompostPos = 117.5;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -94,6 +94,10 @@ OTOSPose prePickupPos = {6.72, -14.06, -109},
          preMidPose = {6.44, -49.57, -131},
          preRightPose = {3.45, -57.66, -132.56},
          preLeftPose = {10.39, -47.63, -130.0};
+
+// Compost Positions
+OTOSPose preRotatePos = {16.75, -14.00, 0},
+         postRotatePos = {16.75, -9.00, 0};
 
 int leverIndex = 4;
 
@@ -280,7 +284,11 @@ void ERCMain()
     // State counter
     int step = 1;
 
-    if (true) {
+    // Compost Counters
+    int forwardSpinCounter = 0,
+        backwardsSpinCounter = 0;
+
+    if (false) {
         step = 0;
     }
     
@@ -321,7 +329,7 @@ void ERCMain()
             case 3:
                 DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
                 if (startBTNTimer.isOver()) {
-                    step = 4;
+                    step = 16;
                 }
             break;
 
@@ -477,8 +485,61 @@ void ERCMain()
                 armServo.SetDegree(armDownLeverPos);
                 zeroMotors();
             break;
+            
+            // Lineup for first bucket Rotate
+            case 16:
+                DriveTo(postRotatePos.x, postRotatePos.y, postRotatePos.h);
+                if (AtPose()) {
+                    step = 17;
+                    freeTimer.start(1.0);
+                    zeroMotors();
+                    forwardSpinCounter++;
+                }
+            break;
 
+            case 17:
+                armServo.SetDegree(armCompostPos);
+                if (freeTimer.isOver()) {
+                    DriveTo(preRotatePos.x, preRotatePos.y, preRotatePos.h);
+                    if (AtPose()) {
+                        armServo.SetDegree(armUpPos);
+                        if (forwardSpinCounter >= 5) {
+                            step = 18;
+                        } else {
+                            step = 16;
+                        }
+                    }
+                }
+            break;
 
+            case 18:
+                DriveTo(preRotatePos.x, preRotatePos.y, preRotatePos.h);
+                if (AtPose()) {
+                    step = 19;
+                    freeTimer.start(1.0);
+                    zeroMotors();
+                    backwardsSpinCounter++;
+                }
+            break;
+
+            case 19:
+            armServo.SetDegree(armCompostPos);
+            if (freeTimer.isOver()) {
+                DriveTo(postRotatePos.x, postRotatePos.y, postRotatePos.h);
+                if (AtPose()) {
+                    armServo.SetDegree(armUpPos);
+                    if (backwardsSpinCounter >= 5) {
+                        step = 4;
+                    } else {
+                        step = 18;
+                    }
+                }
+            }
+            break;
+
+            case 20:
+
+            break;
         }
         // 10ms sleep to slow looptime a little
         Sleep(10);
