@@ -23,10 +23,10 @@ FEHMotor BM(FEHMotor::Motor1,7.0);
 FEHServo armServo(FEHServo::Servo0); 
 
 int armUpPos = 180, 
-    armDownPos = 117.5,
+    armDownPos = 119.5,
     armDropPos = 147,
     armDownLeverPos = 90,
-    armCompostPos = 116.0;
+    armCompostPos = 118.0;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -77,13 +77,12 @@ OTOSPose readLightPos = {6.12, -18.54, -177},
          downRampPos = {9.70, -3.23, 90},
          finishPos = {43.68, -2.0, 90};
 
-// Robot positions for door milestone OLD - RELATIVE TO OLD RELOCALIZATION
-OTOSPose preOpenPose = {12, -16.34, -90},
-         openPose = {12, -21.9, -90},
-         transitionPose = {9.06, -21.85, -90},
-         preClosePose = {12, -22.85, -90},
-         closedPose = {12, -17.6, -90},
-         leavePose = {9.06, -18, -90};
+// Robot positions for door milestone
+OTOSPose preOpenPose = {11.67, -21.85, -175},
+         openPose = {6.54, -21.85, -175},
+         transitionPose = {6.5, -19.85, -175},
+         preClosePose = {6.5, -21.85, 151.00},
+         closedPose = {12.1, -21.85, 151.00};
 
 // Robot positions for apple bucket milestone
 OTOSPose prePickupPos = {6.72, -14.06, -109},
@@ -288,13 +287,11 @@ void ERCMain()
     int forwardSpinCounter = 0,
         backwardsSpinCounter = 0;
 
-    if (true) {
+    if (false) {
         step = 0;
     }
     
     LCD.Clear();
-
-    double time1;
 
     // Main objective switch statement
     while (true) {
@@ -363,85 +360,49 @@ void ERCMain()
                 }
             break;
             
-            // Position before going up the ramp
+            // Position before opening door
             case 7:
-                DriveTo(preRampPos.x, preRampPos.y, preRampPos.h);
+                DriveTo(preOpenPose.x, preOpenPose.y, preOpenPose.h);
                 if (AtPose()) {
-                    zeroMotors();
-                    time1 = TimeNow();
-                    relocTimer.start(3.0);
-                    Sleep(3.0);
                     step = 8;
                 }
             break;
             
-            // Wait and read RCS position
+            // Door Opened
             case 8:
-                if (TimeNow() - time1 >= 3) {
-                    OTOS.getPosition(relocStartPosOTOS);
-                    relocStartPosRCS = * RCS.RequestPosition();
-
+                DriveTo(openPose.x, openPose.y, openPose.h);
+                if (AtPose()) {
                     step = 9;
                 }
+            break;
             
-            // Drive up ramp
+            // Transition to closing
             case 9:
-                DriveTo(upRampPos.x, upRampPos.y, upRampPos.h);
+                DriveTo(transitionPose.x, transitionPose.y, transitionPose.h);
                 if (AtPose()) {
-                    zeroMotors();
-                    relocTimer.start(1);
-                    Sleep(1.0);
                     step = 10;
                 }
             break;
             
-            // Relocalize with RCS
+            // Pre Close
             case 10:
-                if (relocTimer.isOver()) {
-
-                    // NOTE: We might not want to be relocalizing heading with RCS, imu may be more accurate ngl, this code is also not accurate since the rotation axis for the robot(OTOS) & RCS are different but for small heading changes it should not be significant.
-                    relocEndPosRCS = * RCS.RequestPosition();
-
-                    // Find Pos Difference in RCS
-                    float diffX = relocEndPosRCS.x - relocStartPosRCS.x;
-                    float diffY = relocEndPosRCS.y - relocStartPosRCS.y;
-                    float diffH = relocEndPosRCS.heading - relocStartPosRCS.heading;
-
-                    // Add pos diff to initial OTOS pos; RCS X+ & Y+ -> OTOS X- Y-
-                    float newX = relocStartPosOTOS.x - diffX;
-                    float newY = relocStartPosOTOS.y - diffY;
-                    float newH = relocStartPosOTOS.h;
-
-                    // Assign new pos to OTOS
-                    OTOSPose newPos = {newX, newY, newH};
-                    OTOS.setPosition(newPos);
-
-                    // LCD.Clear();
-                    // LCD.WriteLine(relocStartPosRCS->x);
-                    // LCD.WriteLine(relocStartPosRCS->y);
-                    // LCD.WriteLine(relocStartPosRCS->heading);
-                    // LCD.WriteLine(relocEndPosRCS->x);
-                    // LCD.WriteLine(relocEndPosRCS->y);
-                    // LCD.WriteLine(relocEndPosRCS->heading);
-
+                DriveTo(preClosePose.x, preClosePose.y, preClosePose.h);
+                if (AtPose()) {
                     step = 11;
+                    freeTimer.start(2.0);
                 }
             break;
             
+            // Closing
             case 11:
-                DriveTo(dropPose.x, dropPose.y, dropPose.h);
-                if (AtPose()) {
-                    pickupTimer.start(1.0);
+                DriveTo(closedPose.x, closedPose.y, closedPose.h);
+                if (AtPose() || freeTimer.isOver()) {
                     step = 12;
                 }
             break;
             
             case 12:
-                DriveTo(dropPose.x, dropPose.y, dropPose.h);
-                armServo.SetDegree(armDropPos);
-                if (pickupTimer.isOver()) {
-                    step = 13;
-                }
+                DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
             break;
             
             case 13:
