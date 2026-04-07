@@ -26,7 +26,7 @@ int armUpPos = 180,
     armDownPos = 117.5,
     armDropPos = 147,
     armDownLeverPos = 90,
-    armCompostPos = 117.5;
+    armCompostPos = 116.0;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -96,8 +96,8 @@ OTOSPose prePickupPos = {6.72, -14.06, -109},
          preLeftPose = {10.39, -47.63, -130.0};
 
 // Compost Positions
-OTOSPose preRotatePos = {16.75, -14.00, 0},
-         postRotatePos = {16.75, -9.00, 0};
+OTOSPose preRotatePos = {16.5, -14.00, 0},
+         postRotatePos = {16.5, -9.00, 0};
 
 int leverIndex = 4;
 
@@ -288,7 +288,7 @@ void ERCMain()
     int forwardSpinCounter = 0,
         backwardsSpinCounter = 0;
 
-    if (false) {
+    if (true) {
         step = 0;
     }
     
