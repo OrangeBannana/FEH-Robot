@@ -97,7 +97,7 @@ OTOSPose prePickupPos = {6.72, -14.06, -109},
          preLeftPose = {10.39, -47.63, -130.0};
 
 // Compost Positions
-OTOSPose compostPos1 = {1.5, -1.11, -90}, // Center claw on top paddle
+OTOSPose compostPos1 = {1.5, -1.25, -90}, // Center claw on top paddle
          compostPos2 = {1.5, -1.75, -150}, // Slide over and then move arm down
          compostPos3 = {1.5, -1.11, -40}; // Slide to the side to finish opening compost
 
