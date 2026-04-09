@@ -27,7 +27,7 @@ int armUpPos = 180,
     armDropPos = 147,
     armDownLeverPos = 90,
     armCompostPos = 110,
-    armCompostPos2 = 130;
+    armCompostPos2 = 112;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -97,11 +97,11 @@ OTOSPose prePickupPos = {6.72, -14.06, -109},
          preLeftPose = {10.39, -47.63, -130.0};
 
 // Compost Positions
-OTOSPose forwardRotatePos1 = {10.8, -6.7, 0},
-         forwardRotatePos2 = {10.8, -5.65, 0},
-         forwardRotatePos3 = {10.5, -8, 0},
-         backRotatePos1 = {16.5, -14.00, 0},
-         backRotatePos2 = {16.5, -9.00, 0};
+OTOSPose forwardRotatePos1 = {10.9, -6.7, 0},
+         forwardRotatePos2 = {10.9, -5.65, 0},
+         forwardRotatePos3 = {10.0, -9.5, 0},
+         backRotatePos1 = {17, -13.00, 0},
+         backRotatePos2 = {17, -9.00, 0};
 
 
 int leverIndex = 4;
@@ -472,16 +472,8 @@ void ERCMain()
                 if (freeTimer.isOver()) {
                     DriveTo(forwardRotatePos2.x, forwardRotatePos2.y, forwardRotatePos2.h);
                     if (AtPose() || freeTimer.getTime() >= 3) {
-                        if (forwardSpinCounter >= 3) {
-                            step = 19;
-                            armServo.SetDegree(armUpPos);
-                        } else {
                             step = 18;
                             freeTimer.start(0.5);
-                        }
-
-
-
                     }
 
 
@@ -494,12 +486,15 @@ void ERCMain()
                     armServo.SetDegree(armUpPos);
                     freeTimer.start(0.25);
                     zeroMotors();
-                    step = 16;
+                    if (forwardSpinCounter >= 2) {
+                        step = 19;
+                        zeroMotors();
+                    } else {
+                        step = 16;
+                    }
 
                 }
             break;
-
-
 
             case 19:
                 DriveTo(backRotatePos1.x, backRotatePos1.y, backRotatePos1.h);
@@ -516,12 +511,12 @@ void ERCMain()
             armServo.SetDegree(armCompostPos2);
             if (freeTimer.isOver()) {
                 DriveTo(backRotatePos2.x, backRotatePos2.y, backRotatePos2.h);
-                if (AtPose()) {
+                if (AtPose() || freeTimer.getTime() >= 1.0) {
                     armServo.SetDegree(armUpPos);
                     if (backwardsSpinCounter >= 4) {
-                        step = 20;
+                        step = 0;
                     } else {
-                        step = 18;
+                        step = 19;
                     }
                 }
             }
@@ -530,7 +525,6 @@ void ERCMain()
             case 21:
 
                 zeroMotors();
-
 
             break;
         }
