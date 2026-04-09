@@ -27,7 +27,8 @@ int armUpPos = 180,
     armDropPos = 147,
     armDownLeverPos = 90,
     armCompostPos = 110,
-    armCompostPos2 = 112;
+    armCompostPos2 = 112,
+    armDoorPos = 165;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -81,11 +82,9 @@ OTOSPose readLightPos = {6.12, -18.54, -177},
          finishPos = {43.68, -2.0, 90};
 
 // Robot positions for door milestone
-OTOSPose preOpenPose = {11.67, -21.85, -175},
-         openPose = {5.4, -21.85, -175},
-         transitionPose = {5.4, -19.85, -175},
-         preClosePose = {5.4, -21.5, 151.00},
-         closedPose = {12.1, -21.5, 151.00};
+OTOSPose preOpenPose = {9.25, -20.5, 180},
+         openPose = {5.0, -20.5, 170},
+         closedPose = {10.06, -20.5, 180.0};
 
 // Robot positions for apple bucket milestone - Some Old
 OTOSPose prePickupPos = {6.72, -14.06, -109},
@@ -96,7 +95,7 @@ OTOSPose prePickupPos = {6.72, -14.06, -109},
          preRightPose = {3.45, -57.66, -132.56},
          preLeftPose = {10.39, -47.63, -130.0};
 
-// Compost Positions
+// Compost Positions - UP TO DATE
 OTOSPose forwardRotatePos1 = {10.9, -6.7, 0},
          forwardRotatePos2 = {10.9, -5.65, 0},
          forwardRotatePos3 = {10.0, -9.5, 0},
@@ -373,36 +372,21 @@ void ERCMain()
                 DriveTo(preOpenPose.x, preOpenPose.y, preOpenPose.h);
                 if (AtPose()) {
                     step = 8;
+                    freeTimer.start(1.0);
                 }
             break;
             
             // Door Opened
             case 8:
                 DriveTo(openPose.x, openPose.y, openPose.h);
-                if (AtPose()) {
+                if (AtPose() || freeTimer.isOver()) {
                     step = 9;
-                }
-            break;
-            
-            // Transition to closing
-            case 9:
-                DriveTo(transitionPose.x, transitionPose.y, transitionPose.h);
-                if (AtPose()) {
-                    step = 10;
-                }
-            break;
-            
-            // Pre Close
-            case 10:
-                DriveTo(preClosePose.x, preClosePose.y, preClosePose.h);
-                if (AtPose()) {
-                    step = 11;
-                    freeTimer.start(2.0);
+                    freeTimer.start(1.0);
                 }
             break;
             
             // Closing
-            case 11:
+            case 9:
                 DriveTo(closedPose.x, closedPose.y, closedPose.h);
                 if (AtPose() || freeTimer.isOver()) {
                     step = 12;
@@ -472,7 +456,12 @@ void ERCMain()
                 if (freeTimer.isOver()) {
                     DriveTo(forwardRotatePos2.x, forwardRotatePos2.y, forwardRotatePos2.h);
                     if (AtPose() || freeTimer.getTime() >= 3) {
+                        if (forwardSpinCounter >= 2) {
+                            step = 19;
+                            zeroMotors();
+                        } else {
                             step = 18;
+                        }
                             freeTimer.start(0.5);
                     }
 
@@ -486,12 +475,7 @@ void ERCMain()
                     armServo.SetDegree(armUpPos);
                     freeTimer.start(0.25);
                     zeroMotors();
-                    if (forwardSpinCounter >= 2) {
-                        step = 19;
-                        zeroMotors();
-                    } else {
-                        step = 16;
-                    }
+                    step = 16;
 
                 }
             break;
@@ -514,7 +498,8 @@ void ERCMain()
                 if (AtPose() || freeTimer.getTime() >= 1.0) {
                     armServo.SetDegree(armUpPos);
                     if (backwardsSpinCounter >= 4) {
-                        step = 0;
+                        step = 7;
+                        armServo.SetDegree(armDoorPos);
                     } else {
                         step = 19;
                     }
