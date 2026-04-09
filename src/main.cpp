@@ -284,7 +284,7 @@ void ERCMain()
     freeTimer.start(2.0);
     LCD.WaitForTouchToEnd();
 
-    // State counter
+    // State  counter
     int step = 1;
 
     // Compost Counters
