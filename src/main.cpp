@@ -26,8 +26,8 @@ int armUpPos = 180,
     armDownPos = 128.0,
     armDropPos = 147,
     armDownLeverPos = 90,
-    armCompostPos1 = 140,
-    armCompostPos2 = 110;
+    armCompostPos = 110,
+    armCompostPos2 = 130;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
@@ -97,9 +97,11 @@ OTOSPose prePickupPos = {6.72, -14.06, -109},
          preLeftPose = {10.39, -47.63, -130.0};
 
 // Compost Positions
-OTOSPose compostPos1 = {1.5, -1.25, -90}, // Center claw on top paddle
-         compostPos2 = {1.5, -1.75, -150}, // Slide over and then move arm down
-         compostPos3 = {1.5, -1.11, -40}; // Slide to the side to finish opening compost
+OTOSPose forwardRotatePos1 = {10.8, -6.7, 0},
+         forwardRotatePos2 = {10.8, -5.65, 0},
+         forwardRotatePos3 = {10.5, -8, 0},
+         backRotatePos1 = {16.5, -14.00, 0},
+         backRotatePos2 = {16.5, -9.00, 0};
 
 
 int leverIndex = 4;
@@ -452,75 +454,84 @@ void ERCMain()
             
             // Lineup with claw up, over bucket
             case 16:
-                armServo.SetDegree(armUpPos);
-                if (freeTimer.isOver()) {
-                    DriveTo(compostPos1.x, compostPos1.y, compostPos1.h);
-                    if (AtPose()) {
-                        step = 17;
-                        freeTimer.start(0.5);
-                    }
+                if (freeTimer.isOver() || forwardSpinCounter == 0) {
+                DriveTo(forwardRotatePos1.x, forwardRotatePos1.y, forwardRotatePos1.h);
+                if (AtPose()) {
+                    step = 17;
+                    freeTimer.start(0.5);
+                    zeroMotors();
+                    forwardSpinCounter++;
                 }
-
+            }
             break;
-            // Move claw down, once claw is down slide to the side to move top fin over
+
+
+
             case 17:
-                armServo.SetDegree(armCompostPos1);
+                armServo.SetDegree(armCompostPos);
                 if (freeTimer.isOver()) {
-                    DriveTo(compostPos2.x, compostPos2.y, compostPos2.h);
-                    if (AtPose()) {
-                        forwardSpinCounter++;
+                    DriveTo(forwardRotatePos2.x, forwardRotatePos2.y, forwardRotatePos2.h);
+                    if (AtPose() || freeTimer.getTime() >= 3) {
                         if (forwardSpinCounter >= 3) {
-                            step = 18;
-                        } else {
-                            step = 16;
-                        }
-                        
-                        zeroMotors();
-                        freeTimer.start(0.5);
-                    }
-                } else {
-                    DriveTo(compostPos1.x, compostPos1.y, compostPos1.h);
-                }
-
-            break;
-            // Move claw up, go back over middle fin
-            case 18:
-                armServo.SetDegree(armUpPos);
-                if (freeTimer.isOver()) {
-                    DriveTo(compostPos1.x, compostPos1.y, compostPos1.h);
-                    if (AtPose()) {
-                        step = 19;
-                        freeTimer.start(0.5);
-                    }
-                }
-            break;
-
-            case 19:
-                armServo.SetDegree(armCompostPos1);
-                if (freeTimer.isOver()) {
-                    DriveTo(compostPos3.x, compostPos3.y, compostPos3.h);
-                    if (AtPose() || freeTimer.getTime() >= 3.0) {
-                        backwardsSpinCounter++;
-                        if (backwardsSpinCounter >= 3) {
-                            step = 20;
+                            step = 19;
                             armServo.SetDegree(armUpPos);
                         } else {
                             step = 18;
+                            freeTimer.start(0.5);
                         }
-                    
-                        zeroMotors();
-                        freeTimer.start(0.5);
+
+
+
                     }
-                } else {
-                    DriveTo(compostPos1.x, compostPos1.y, compostPos1.h);
+
+
+                }
+            break;
+
+            case 18:
+                DriveTo(forwardRotatePos3.x, forwardRotatePos3.y, forwardRotatePos3.h);
+                if (AtPose()) {
+                    armServo.SetDegree(armUpPos);
+                    freeTimer.start(0.25);
+                    zeroMotors();
+                    step = 16;
+
+                }
+            break;
+
+
+
+            case 19:
+                DriveTo(backRotatePos1.x, backRotatePos1.y, backRotatePos1.h);
+                if (AtPose()) {
+                    step = 20;
+                    freeTimer.start(0.5);
+                    zeroMotors();
+                    backwardsSpinCounter++;
+
                 }
             break;
 
             case 20:
-                DriveTo(startPos.x, startPos.y, startPos.h);
+            armServo.SetDegree(armCompostPos2);
+            if (freeTimer.isOver()) {
+                DriveTo(backRotatePos2.x, backRotatePos2.y, backRotatePos2.h);
                 if (AtPose()) {
-                    step = 4;
+                    armServo.SetDegree(armUpPos);
+                    if (backwardsSpinCounter >= 4) {
+                        step = 20;
+                    } else {
+                        step = 18;
+                    }
                 }
+            }
+            break;
+
+            case 21:
+
+                zeroMotors();
+
+
             break;
         }
         // 10ms sleep to slow looptime a little
