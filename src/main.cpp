@@ -27,7 +27,7 @@ int armUpPos = 180,
     armDropPos = 147,
     armDownLeverPos = 90,
     armCompostPos = 110,
-    armCompostPos2 = 112,
+    armCompostPos2 = 110,
     armDoorPos = 165;
 
 // Create CDS Cell Object
@@ -456,12 +456,7 @@ void ERCMain()
                 if (freeTimer.isOver()) {
                     DriveTo(forwardRotatePos2.x, forwardRotatePos2.y, forwardRotatePos2.h);
                     if (AtPose() || freeTimer.getTime() >= 3) {
-                        if (forwardSpinCounter >= 2) {
-                            step = 19;
-                            zeroMotors();
-                        } else {
                             step = 18;
-                        }
                             freeTimer.start(0.5);
                     }
 
@@ -472,15 +467,21 @@ void ERCMain()
             case 18:
                 DriveTo(forwardRotatePos3.x, forwardRotatePos3.y, forwardRotatePos3.h);
                 if (AtPose()) {
+                    if (forwardSpinCounter >= 3) {
+                        step = 19;
+                    } else {
+                        step = 16;
+                    }
                     armServo.SetDegree(armUpPos);
                     freeTimer.start(0.25);
                     zeroMotors();
-                    step = 16;
+
 
                 }
             break;
 
             case 19:
+                if (freeTimer.isOver() || backwardsSpinCounter == 0){
                 DriveTo(backRotatePos1.x, backRotatePos1.y, backRotatePos1.h);
                 if (AtPose()) {
                     step = 20;
@@ -489,6 +490,7 @@ void ERCMain()
                     backwardsSpinCounter++;
 
                 }
+            }
             break;
 
             case 20:
@@ -497,9 +499,10 @@ void ERCMain()
                 DriveTo(backRotatePos2.x, backRotatePos2.y, backRotatePos2.h);
                 if (AtPose() || freeTimer.getTime() >= 1.0) {
                     armServo.SetDegree(armUpPos);
-                    if (backwardsSpinCounter >= 4) {
+                    if (backwardsSpinCounter >= 6) {
                         step = 7;
                         armServo.SetDegree(armDoorPos);
+                        freeTimer.start(0.5);
                     } else {
                         step = 19;
                     }
