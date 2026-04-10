@@ -12,7 +12,7 @@
 #include "PDFL.h"
 
 // Enable test mode?
-bool testMode = false;
+bool testMode = true;
 
 // Create Motor Objects
 FEHMotor FL(FEHMotor::Motor2,7.0);
