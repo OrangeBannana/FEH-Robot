@@ -12,7 +12,7 @@
 #include "PDFL.h"
 
 // Enable test mode?
-bool testMode = true;
+bool testMode = false;
 
 // Create Motor Objects
 FEHMotor FL(FEHMotor::Motor2,7.0);
@@ -69,41 +69,8 @@ OTOSPose posOffset = {1.915, -1.76847, 0.0};
 OTOSPose zeroPos = {0.0, 0.0, 0.0},
          startPos = {0.3-.25, -5.18+0.5, -129.0},
          buttonPos = {-3.2, -4.5, -155.0},
-         rampTransitionPos = {5.0, -16.5, 151.00},
-         preRampPos = {-4.81, -16.50, -170.0},
-         upRampPos = {-3.5, -40.4, 180},
-         calibrationPos = {-2.75, -40.4, 90};
-         
-// Robot positions for button milestone OLD - RELATIVE TO OLD RELOCALIZATION
-OTOSPose readLightPos = {6.12, -18.54, -177},
-         blueButtonPos = {7.79, -23.0, -177},
-         redButtonPos = {-0.3, -25.0, -177},
-         downRampPos = {9.70, -3.23, 90},
-         finishPos = {43.68, -2.0, 90};
-
-// Robot positions for door milestone
-OTOSPose preOpenPose = {9.25, -20.5, 180},
-         openPose = {5.0, -20.5, 170},
-         closedPose = {10.06, -20.5, 180.0};
-
-// Robot positions for apple bucket milestone - Some Old
-OTOSPose prePickupPos = {6.72, -14.06, -109},
-         pickupPos = {9.95, -15.1, -109},
-         dropPose = {-5.32, -49.54, -175},
-         postDropPose = {-5.32, -45.54, -175},
-         preMidPose = {6.44, -49.57, -131},
-         preRightPose = {3.45, -57.66, -132.56},
-         preLeftPose = {10.39, -47.63, -130.0};
-
-// Compost Positions - UP TO DATE
-OTOSPose forwardRotatePos1 = {10.9, -6.7, 0},
-         forwardRotatePos2 = {10.9, -5.65, 0},
-         forwardRotatePos3 = {10.0, -9.5, 0},
-         backRotatePos1 = {17, -13.00, 0},
-         backRotatePos2 = {17, -9.00, 0};
-
-
-int leverIndex = 4;
+         preCompostPos = {9, -5, -38.87},
+         compostPos = {8.94, -0.67, -29};
 
 // Relocalization Poses
 OTOSPose relocStartPosOTOS;
@@ -331,190 +298,29 @@ void ERCMain()
             case 3:
                 DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
                 if (startBTNTimer.isOver()) {
-                    step = 16;
-                    freeTimer.start(0.0);
+                    step = 4;
                 }
             break;
 
-            // Go to position to pickup bucket and move arm down to be ready
-            case 4:
-            armServo.SetDegree(armDownPos);
-            DriveTo(prePickupPos.x, prePickupPos.y, prePickupPos.h);
+           case 4:
+                DriveTo(preCompostPos.x, preCompostPos.y, preCompostPos.h);
                 if (AtPose()) {
-                    relocTimer.start(2.0);
-                    powerScale = 0.4;
                     step = 5;
-                    freeTimer.start(4.0);
+                    freeTimer.start(3.0);
                 }
-            break;
-            
-            // Slowly drive forward into bucket, if robot is stopped or x coordinate goes past bucket position then go to next state
-            case 5:
-                DriveAt(0,.25,0);
-                if ((abs(vel.x) < 0.02 &&  abs(vel.y) < 0.02 && abs(vel.h) < 0.02 && relocTimer.isOver()) || abs(pos.x) >= abs(pickupPos.x) || freeTimer.isOver()) {
-                    step = 6;
-                    pickupTimer.start(0.5);
-                    zeroMotors();
-                }
-            break;
-
-            // Pickup up (wait time to wait for servo to move)
-            case 6:
-                armServo.SetDegree(armUpPos);
-                if (pickupTimer.isOver()) {
-                    powerScale = 1;
-                    step = 7;
-                }
-            break;
-            
-            // Position before opening door
-            case 7:
-                DriveTo(preOpenPose.x, preOpenPose.y, preOpenPose.h);
-                if (AtPose()) {
-                    step = 8;
-                    freeTimer.start(1.0);
-                }
-            break;
-            
-            // Door Opened
-            case 8:
-                DriveTo(openPose.x, openPose.y, openPose.h);
-                if (AtPose() || freeTimer.isOver()) {
-                    step = 9;
-                    freeTimer.start(1.0);
-                }
-            break;
-            
-            // Closing
-            case 9:
-                DriveTo(closedPose.x, closedPose.y, closedPose.h);
-                if (AtPose() || freeTimer.isOver()) {
-                    step = 12;
-                }
-            break;
-            
-            case 12:
-                DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
-            break;
-            
-            case 13:
-                
-            break;
-
-            case 14:
-                switch(leverIndex) {
-                    case 4:
-                        leverIndex = RCS.GetLever();
-                    break;
-
-                    case 0:
-                        DriveTo(preLeftPose.x, preLeftPose.y, preLeftPose.h);
-                        if (AtPose()) {
-                            step = 15;
-                        }
-                    break;
-
-                    case 1:
-                    DriveTo(preMidPose.x, preMidPose.y, preMidPose.h);
-                    if (AtPose()) {
-                        step = 15;
-                    }
-                    break;
-
-                    case 2:
-                    DriveTo(preRightPose.x, preRightPose.y, preRightPose.h);
-                    if (AtPose()) {
-                        step = 15;
-                    }
                 break;
 
-                }
+            case 5:
+            DriveTo(compostPos.x, compostPos.y, compostPos.h);
+            if (AtPose() || freeTimer.isOver()) {
+                step = 6;
+            }
             break;
 
-            case 15:
-                armServo.SetDegree(armDownLeverPos);
-                zeroMotors();
+            case 6:
+            DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
             break;
             
-            // Lineup with claw up, over bucket
-            case 16:
-                if (freeTimer.isOver() || forwardSpinCounter == 0) {
-                DriveTo(forwardRotatePos1.x, forwardRotatePos1.y, forwardRotatePos1.h);
-                if (AtPose()) {
-                    step = 17;
-                    freeTimer.start(0.5);
-                    zeroMotors();
-                    forwardSpinCounter++;
-                }
-            }
-            break;
-
-
-
-            case 17:
-                armServo.SetDegree(armCompostPos);
-                if (freeTimer.isOver()) {
-                    DriveTo(forwardRotatePos2.x, forwardRotatePos2.y, forwardRotatePos2.h);
-                    if (AtPose() || freeTimer.getTime() >= 3) {
-                            step = 18;
-                            freeTimer.start(0.5);
-                    }
-
-
-                }
-            break;
-
-            case 18:
-                DriveTo(forwardRotatePos3.x, forwardRotatePos3.y, forwardRotatePos3.h);
-                if (AtPose()) {
-                    if (forwardSpinCounter >= 3) {
-                        step = 19;
-                    } else {
-                        step = 16;
-                    }
-                    armServo.SetDegree(armUpPos);
-                    freeTimer.start(0.25);
-                    zeroMotors();
-
-
-                }
-            break;
-
-            case 19:
-                if (freeTimer.isOver() || backwardsSpinCounter == 0){
-                DriveTo(backRotatePos1.x, backRotatePos1.y, backRotatePos1.h);
-                if (AtPose()) {
-                    step = 20;
-                    freeTimer.start(0.5);
-                    zeroMotors();
-                    backwardsSpinCounter++;
-
-                }
-            }
-            break;
-
-            case 20:
-            armServo.SetDegree(armCompostPos2);
-            if (freeTimer.isOver()) {
-                DriveTo(backRotatePos2.x, backRotatePos2.y, backRotatePos2.h);
-                if (AtPose() || freeTimer.getTime() >= 1.0) {
-                    armServo.SetDegree(armUpPos);
-                    if (backwardsSpinCounter >= 6) {
-                        step = 7;
-                        armServo.SetDegree(armDoorPos);
-                        freeTimer.start(0.5);
-                    } else {
-                        step = 19;
-                    }
-                }
-            }
-            break;
-
-            case 21:
-
-                zeroMotors();
-
-            break;
         }
         // 10ms sleep to slow looptime a little
         Sleep(10);
