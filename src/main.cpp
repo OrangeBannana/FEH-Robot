@@ -26,12 +26,13 @@ int armUpPos = 180,
     armDownPos = 128.5,
     armDropPos = 147,
     armDownLeverPos = 90,
-    armCompostPos = 132, // UPDATED 4/15
+    armCompostPos = 131, // UPDATED 4/16
     armDoorPos = 160, //UPDATED 4/15
     armTestPos = 132;
 
 // Create CDS Cell Object
 AnalogInputPin CDS(FEHIO::Pin0);
+float CDSRead = 0;
 
 // Signs to adjust motor directions
 // Should be configured such that X+ is right and Y+ is forward
@@ -71,26 +72,26 @@ OTOSPose zeroPos = {0.0, 0.0, 0.0},
          buttonPos = {-3.2, -4.5, -155.0},
          rampTransitionPos = {5.0, -16.5, 151.00},
          preRampPos = {-4.81, -16.50, -170.0},
-         upRampPos = {-5, -42.0, 90},
-         calibrationPos = {-2.75, -40.4, 90};
+         upRampPos = {-5.5, -42.0, 90};
          
 // Robot positions for button milestone OLD - RELATIVE TO OLD RELOCALIZATION
-OTOSPose readLightPos = {6.12, -18.54, -177},
-         blueButtonPos = {7.79, -23.0, -177},
-         redButtonPos = {-0.3, -25.0, -177},
-         downRampPos = {9.70, -3.23, 90},
-         finishPos = {43.68, -2.0, 90};
+OTOSPose readLightPos = {6.48, -19.5, -180}, // NEW
+         blueButtonPos = {6.7, -22.23, -116}, // NEW
+         redButtonPos = {3.47, -22.32, -118}, // NEW
+         downRampPos = {9.70, -3.23, 90}, // DEP
+         finishPos = {43.68, -2.0, 90}; // DEP
 
 // Robot positions for door milestone
-OTOSPose preOpenPose = {10.25, -20.85, 180},
+OTOSPose preOpenPose = {10.75, -20.75, 180},
          openPose = {4.41, -20.85, 180};
 
-// Robot positions for apple bucket milestone - Some Old
-OTOSPose prePickupPos = {6.72, -14.06, -109},
-         pickupPos = {9.95, -15.1, -109},
-         dropPose = {-5.32, -49.54, -175},
-         postDropPose = {-5.32, -45.54, -175},
-         preMidPose = {6.44, -49.57, -131},
+// Robot positions for apple bucket - Some Old
+OTOSPose prePickupPos = {6.72, -14.06, -109}, // UP TO DATE
+         pickupPos = {9.95, -15.1, -109}, // UP TO DATE
+         dropPose = {3.41, -1.72, 90}, 
+         postDropPose = {6.5, -1.72, 90};
+
+OTOSPose preMidPose = {6.44, -49.57, -131},
          preRightPose = {3.45, -57.66, -132.56},
          preLeftPose = {10.39, -47.63, -130.0};
 
@@ -113,6 +114,9 @@ RCSPose relocStartPosRCS, relocEndPosRCS;
 float redVal = 0.415;
 float offVal = 3.162;
 float blueVal = 0.0;
+
+float blueDist;
+float redDist;
 
 struct timer {
     public:
@@ -276,9 +280,15 @@ void ERCMain()
     OTOS.calibrateImu();
     OTOS.setOffset(posOffset);
     Sleep(1.0);
+
     LCD.WriteLine("OTOS initialized");
     LCD.WriteLine("Press to continue");
-    LCD.WriteLine("Hold 2 seconds to enter logging mode");
+    LCD.WriteLine("Tap thrice to enter logging mode");
+    //freeTimer.start(3.0);
+    // int tapCounter = 0;
+    // while (!freeTimer.isOver()) {
+    //     LCD.
+    // }
 
     LCD.WaitForTouchToStart();
     freeTimer.start(2.0);
@@ -446,47 +456,102 @@ void ERCMain()
 
             case 13:
                 DriveTo(upRampPos.x, upRampPos.y, upRampPos.h);
-            break;
-            case 14:
-                switch(leverIndex) {
-                    case 4:
-                        leverIndex = RCS.GetLever();
-                    break;
-
-                    case 0:
-                        DriveTo(preLeftPose.x, preLeftPose.y, preLeftPose.h);
-                        if (AtPose()) {
-                            step = 15;
-                        }
-                    break;
-
-                    case 1:
-                    DriveTo(preMidPose.x, preMidPose.y, preMidPose.h);
-                    if (AtPose()) {
-                        step = 15;
-                    }
-                    break;
-
-                    case 2:
-                    DriveTo(preRightPose.x, preRightPose.y, preRightPose.h);
-                    if (AtPose()) {
-                        step = 15;
-                    }
-                break;
-
+                if (AtPose()) {
+                    step = 19;
+                    freeTimer.start(0.5);
                 }
             break;
 
-            case 15:
-                armServo.SetDegree(armDownLeverPos);
-                zeroMotors();
+            case 19:
+                DriveAt(0.0, 0.45, 0);
+                if (abs(vel.x) <= 0.2 && freeTimer.isOver()) {
+                    step = 20;
+                    freeTimer.start(0.5);
+                }
+                break;
+
+            case 20:
+                DriveAt(-.35, 0.1, -0.05);
+                if (abs(vel.y) <= 0.1 && freeTimer.isOver()) {
+                    step = 21;
+                    freeTimer.start(0.5);
+                }
             break;
 
             case 21:
+            DriveAt(-0.15, 0.15, 0);
+            if ((abs(vel.y) <= 0.1 && abs(vel.x) <= 0.1 &&  freeTimer.isOver()) || freeTimer.getTime() >= 7) {
+                step = 22;
+                freeTimer.start(0.5);
+            }
+            break;
 
+            case 22:
                 zeroMotors();
+                Sleep(0.5);
+                OTOS.resetTracking();
+                Sleep(0.5);
+                step = 23;
+            break;
+
+            case 23:
+            DriveTo(dropPose.x, dropPose.y, dropPose.h);
+            if (AtPose()) {
+                step = 24;
+                freeTimer.start(0.5);
+                armServo.SetDegree(armDropPos);
+            }
+            break;
+
+            case 24:
+                if(freeTimer.isOver()) {
+                    DriveTo(postDropPose.x, postDropPose.y, postDropPose.h);
+                    if (AtPose()) {
+                        step = 25;
+                    }
+                } else {
+                    DriveTo(dropPose.x, dropPose.y, dropPose.h);
+                }
+            break;
+
+            case 25:
+                DriveTo(readLightPos.x, readLightPos.y, readLightPos.h);
+                if (AtPose()) {
+                    step = 26;
+                }
+            break;
+
+            case 26:
+                zeroMotors();
+                Sleep(0.5);
+
+                CDSRead  = CDS.Value();
+
+                blueDist = abs(blueVal - CDS.Value());
+                redDist = abs(redVal - CDS.Value());
+
+                step = 27;
+                freeTimer.start(2.0);
 
             break;
+
+            case 27:
+
+            if (blueDist < redDist) {
+                DriveTo(blueButtonPos.x, blueButtonPos.y, blueButtonPos.h);
+            } else {
+                DriveTo(redButtonPos.x, redButtonPos.y, redButtonPos.h);
+            }
+
+            if (AtPose() || freeTimer.isOver()) {
+                step  = 0;
+            }
+            break;
+
+            case 28:
+
+            break;
+
         }
         // 10ms sleep to slow looptime a little
         Sleep(10);
