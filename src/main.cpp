@@ -1,4 +1,3 @@
-// FEH Library Imports
 #include <FEHLCD.h>
 #include <FEHIO.h>
 #include <FEHUtility.h>
@@ -7,9 +6,9 @@
 #include <FEHRCS.h>
 #include <FEHServo.h>
 
-// Local Class Imports
-#include "FEHOTOS.h"
-#include "PDFL.h"
+#include "Drivers/FEHOTOS.h"
+#include "Controllers/PDFL.h"
+#include "Controllers/timer.h"
 
 // Enable test mode?
 bool testMode = false;
@@ -112,8 +111,6 @@ int leverIndex = 4;
 OTOSPose relocStartPosOTOS;
 RCSPose relocStartPosRCS, relocEndPosRCS;
 
-
-
 float redVal = 0.415;
 float offVal = 3.162;
 float blueVal = 0.0;
@@ -121,104 +118,12 @@ float blueVal = 0.0;
 float blueDist;
 float redDist;
 
-struct timer {
-    public:
-
-        void start(float length) {
-            startTime = TimeNow();
-            timerLength = length;
-        }
-    
-        bool isOver() {
-            return TimeNow() - startTime >= timerLength;
-        }
-    
-        float getTime() {
-            return TimeNow() - startTime;
-        }
-
-    private:
-        float startTime;
-        float timerLength;
-};
-
 timer freeTimer;
 timer startBTNTimer;
 timer relocTimer;
 timer BTN2Timer;
 
-timer openDoorTimer;
-timer closeDoorTimer;
-
 timer pickupTimer;
-
-// Drive to a global coordinate using PID
-void DriveTo(OTOSPose pose) {
-
-    targetX = pose.x;
-    targetY = pose.y;
-    targetH = pose.h;
-    // For both robot and world coordinates
-    // Y+ is forward
-    // X+ is right
-
-    float tError = sqrt(pow(targetX - pos.x, 2) + pow(targetY - pos.y, 2));
-    float hError = targetH - pos.h;
-    hError = fmod(fmod(hError + 180, 360) + 360, 360) - 180;
-
-    tController.setTarget(0);
-    hController.setTarget(0);
-
-    tController.update(tError);
-    hController.update(-hError);
-
-    float hRads = (pos.h * PI) / 180;
-
-    float vX1 = ((targetX - pos.x) / tError) * -tController.output;
-    float vY1 = ((targetY - pos.y) / tError) * -tController.output;
-
-    float vX = vX1 * cos(hRads)  + vY1 * sin(hRads);
-    float vY = -vX1 * sin(hRads) + vY1 * cos(hRads);
-    float vTheta = -hController.output;
-
-    double BMpower = -vX + vTheta;
-    double FRpower = (1.0/2.0) * vX - (sqrt(3) / 2) * vY + vTheta;
-    double FLpower = (1.0/2.0) * vX + (sqrt(3) / 2) * vY + vTheta;
-
-    double maxPower = max(abs(BMpower), max(abs(FRpower), max(abs(FLpower), 1.0)));
-
-    BMpower = (BMpower / maxPower) * 100 * BMsign;
-    FRpower = (FRpower / maxPower) * 100 * FRsign;
-    FLpower = (FLpower / maxPower) * 100 * FLsign;
-
-    FEHLog::printf("FL:%.1f FR:%.1f BM:%.1f\n", FLpower, FRpower, BMpower);
-
-    BM.SetPercent(BMpower * powerScale);
-    FR.SetPercent(FRpower * powerScale);
-    FL.SetPercent(FLpower * powerScale);
-
-}
-
-// Drive with given constant vectors relative to robot position
-void DriveAt(double vX, double vY, double vTheta) {
-    // For both robot and world coordinates
-    // Y+ is forward
-    // X+ is right
-    // H+ is CW
-
-    double BMpower = -vX + vTheta;
-    double FRpower = (1.0/2.0) * vX - (sqrt(3) / 2) * vY + vTheta;
-    double FLpower = (1.0/2.0) * vX + (sqrt(3) / 2) * vY + vTheta;
-
-    BMpower = BMpower * 100 * BMsign;
-    FRpower = FRpower * 100 * FRsign;
-    FLpower = FLpower * 100 * FLsign;
-
-    BM.SetPercent(BMpower);
-    FR.SetPercent(FRpower);
-    FL.SetPercent(FLpower);
-
-}
 
 // Returns true if the robot is at its position within a tolerance
 boolean AtPose() {
