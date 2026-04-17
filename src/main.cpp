@@ -25,9 +25,10 @@ FEHServo armServo(FEHServo::Servo0);
 int armUpPos = 180, 
     armDownPos = 128.5,
     armDropPos = 147,
+    armIntermediateDropPos = (armDropPos + armUpPos) / 2,
     armDownLeverPos = 90,
-    armCompostPos = 131, // UPDATED 4/16
-    armDoorPos = 160, //UPDATED 4/15
+    armCompostPos = 130, // UPDATED 4/16
+    armDoorPos = 163, //UPDATED 4/16 USED TO BE 160
     armTestPos = 132;
 
 // Create CDS Cell Object
@@ -68,22 +69,24 @@ OTOSPose posOffset = {1.915, -1.76847, 0.0};
 
 // General Robot Positions
 OTOSPose zeroPos = {0.0, 0.0, 0.0},
-         startPos = {0.3-.25-.15, -5.18+0.5 + .25, -129.0},
-         buttonPos = {-3.2, -4.5, -155.0},
+         startPos = {0.3-.25-.15 - .5, -5.18+0.5 + .25, -129.0},
+         //buttonPos = {-4.5, -4.0, -155.0 + 120},
+         buttonPos = {-6.5, -4.0, 0},
          rampTransitionPos = {5.0, -16.5, 151.00},
          preRampPos = {-4.81, -16.50, -170.0},
-         upRampPos = {-5.5, -42.0, 90};
+         upRampPos = {-4.5, -42.0, 90},
+         preDownRampPos = {8.51, -2.4, -90},
+         finishPos = {43, -2, -90};
          
 // Robot positions for button milestone OLD - RELATIVE TO OLD RELOCALIZATION
-OTOSPose readLightPos = {6.48, -19.5, -180}, // NEW
-         blueButtonPos = {6.7, -22.23, -116}, // NEW
-         redButtonPos = {3.47, -22.32, -118}, // NEW
-         downRampPos = {9.70, -3.23, 90}, // DEP
-         finishPos = {43.68, -2.0, 90}; // DEP
+OTOSPose readLightPos = {6.13, -19.5, -180}, // NEW
+         blueButtonPos = {5.9, -23.5, -120}, // NEW
+         redButtonPos = {3.0, -23.5, -115}; // NEW
+
 
 // Robot positions for door milestone
-OTOSPose preOpenPose = {10.75, -20.75, 180},
-         openPose = {4.41, -20.85, 180};
+OTOSPose preOpenPose = {11.0, -20.75, 180},
+         openPose = {4.41, -20.85, 160};
 
 // Robot positions for apple bucket - Some Old
 OTOSPose prePickupPos = {6.72, -14.06, -109}, // UP TO DATE
@@ -96,7 +99,7 @@ OTOSPose preMidPose = {6.44, -49.57, -131},
          preLeftPose = {10.39, -47.63, -130.0};
 
 // Compost Positions - UP TO DATE
-OTOSPose forwardRotatePos1 = {10.8, -7.5, 0},
+OTOSPose forwardRotatePos1 = {10.8, -6.8, 0},
          forwardRotatePos2 = {10.8, -6.2, 0},
          forwardRotatePos3 = {9.5, -9.5, 0},
          backRotatePos1 = {17, -13.00, 0},
@@ -266,7 +269,7 @@ void ERCMain()
     LCD.WriteLine("BLE Logging Initialized");
     
     LCD.WriteLine("Connecting to RCS");
-    //RCS.InitializeTouchMenu("0800A2XNH");
+    RCS.InitializeTouchMenu("0800A2XNH");
     LCD.WriteLine("RCS Connected");
 
     LCD.WriteLine("Waiting for press...");
@@ -329,7 +332,7 @@ void ERCMain()
             // Waiting for light to signal start
             case 2:
                 DriveTo(startPos.x, startPos.y, startPos.h);
-                if (abs(redVal - CDS.Value()) < 0.35 || true) {
+                if (abs(redVal - CDS.Value()) < 0.35) {
                     startBTNTimer.start(0.5);
                     step = 3;
                 }
@@ -464,7 +467,7 @@ void ERCMain()
 
             case 19:
                 DriveAt(0.0, 0.45, 0);
-                if (abs(vel.x) <= 0.2 && freeTimer.isOver()) {
+                if ((abs(vel.x) <= 0.2 && freeTimer.isOver()) || freeTimer.getTime() >= 5) {
                     step = 20;
                     freeTimer.start(0.5);
                 }
@@ -472,7 +475,7 @@ void ERCMain()
 
             case 20:
                 DriveAt(-.35, 0.1, -0.05);
-                if (abs(vel.y) <= 0.1 && freeTimer.isOver()) {
+                if ((abs(vel.y) <= 0.1 && freeTimer.isOver()) || freeTimer.getTime() >= 8) {
                     step = 21;
                     freeTimer.start(0.5);
                 }
@@ -497,18 +500,22 @@ void ERCMain()
             case 23:
             DriveTo(dropPose.x, dropPose.y, dropPose.h);
             if (AtPose()) {
-                step = 24;
                 freeTimer.start(0.5);
-                armServo.SetDegree(armDropPos);
+                armServo.SetDegree(armIntermediateDropPos);
+                step = 24;
             }
             break;
 
             case 24:
                 if(freeTimer.isOver()) {
+                    armServo.SetDegree(armDropPos);
+                    if (freeTimer.getTime() >= 1.0){
                     DriveTo(postDropPose.x, postDropPose.y, postDropPose.h);
                     if (AtPose()) {
                         step = 25;
+                        armServo.SetDegree(armUpPos);
                     }
+                }
                 } else {
                     DriveTo(dropPose.x, dropPose.y, dropPose.h);
                 }
@@ -530,6 +537,12 @@ void ERCMain()
                 blueDist = abs(blueVal - CDS.Value());
                 redDist = abs(redVal - CDS.Value());
 
+                if (blueDist < redDist) {
+                    LCD.WriteLine("blue");
+                } else {
+                    LCD.WriteLine("red");
+                }
+
                 step = 27;
                 freeTimer.start(2.0);
 
@@ -544,12 +557,19 @@ void ERCMain()
             }
 
             if (AtPose() || freeTimer.isOver()) {
-                step  = 0;
+                step  = 28;
             }
             break;
 
             case 28:
+                DriveTo(preDownRampPos.x, preDownRampPos.y, preDownRampPos.h);
+                if (AtPose()) {
+                    step = 29;
+                }
+            break;
 
+            case 29:
+                DriveTo(finishPos.x, finishPos.y, finishPos.h);
             break;
 
         }
