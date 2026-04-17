@@ -4,6 +4,14 @@
 
 struct OTOSPose {
     float x, y, h;
+
+    bool operator==(const OTOSPose& other) const {
+        return x == other.x && y == other.y && h == other.h;
+    }
+
+    bool operator!=(const OTOSPose& other) const {
+        return !(*this == other);
+    }
 };
 
 enum OTOSLinearUnit {

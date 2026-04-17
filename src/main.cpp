@@ -9,17 +9,14 @@
 #include "Drivers/FEHOTOS.h"
 #include "Controllers/PDFL.h"
 #include "Controllers/timer.h"
+#include "Mechanisms/kiwi.h"
 
 // Enable test mode?
 bool testMode = false;
 
-// Create Motor Objects
-FEHMotor FL(FEHMotor::Motor2,7.0);
-FEHMotor FR(FEHMotor::Motor3,7.0);
-FEHMotor BM(FEHMotor::Motor1,7.0);
-
-// Create servo object
-FEHServo armServo(FEHServo::Servo0); 
+kiwi drivetrain(FEHMotor::Motor2, FEHMotor::Motor3, FEHMotor::Motor1, 12);
+FEHServo armServo(FEHServo::Servo0);
+AnalogInputPin CDS(FEHIO::Pin0);
 
 int armUpPos = 180, 
     armDownPos = 128.5,
@@ -30,31 +27,7 @@ int armUpPos = 180,
     armDoorPos = 163, //UPDATED 4/16 USED TO BE 160
     armTestPos = 132;
 
-// Create CDS Cell Object
-AnalogInputPin CDS(FEHIO::Pin0);
 float CDSRead = 0;
-
-// Signs to adjust motor directions
-// Should be configured such that X+ is right and Y+ is forward
-// when passing drive vectors to robot
-double FLsign = -1;
-double FRsign = -1;
-double BMsign = -1;
-
-// Scale all power values by this amount
-double powerScale = 1;
-
-// Boolean to enable or disable using biases when driving NOT IMPLEMENTED
-bool useBiases = true;
-
-// Weights to account for weight distribution and geometric imperfections
-double FLweight = 1;
-double FRweight = 0.95;
-double BMweight = 0.90;
-
-// PID controllers
-PDFL tController(1.3, 0, 0, 0);
-PDFL hController(0.085, 0, 0, 0);
 
 // Initial Target Positions
 float targetX = 0;
@@ -125,26 +98,6 @@ timer BTN2Timer;
 
 timer pickupTimer;
 
-// Returns true if the robot is at its position within a tolerance
-boolean AtPose() {
-    bool atHeading = 0.5 >= abs(targetH - pos.h);
-
-    float distX = targetX - pos.x;
-    float distY = targetY - pos.y;
-
-    float Dist = sqrt(pow(distX, 2.0) + pow(distY, 2.0));
-
-    bool atLocation = 0.15 >= Dist;
-
-    return atHeading && atLocation;
-}
-
-void zeroMotors() {
-    BM.SetPercent(0);
-    FR.SetPercent(0);
-    FL.SetPercent(0);
-}
-
 void logMode() {
     LCD.Clear();
     zeroMotors();
@@ -162,12 +115,21 @@ void logMode() {
     FEHLog::printf("X: %.2fY: %.2fH: %.2f", pos.x, pos.y, pos.h);
     Sleep(300);
 }
-void ERCMain()
-{   
+
+void initialize() {
+    drivetrain.setMotorDirections(-1, -1, -1);
+    drivetrain.setPowerScalar(7/12);
+    drivetrain.setTranslationPDFL(1.3, 0, 0, 0);
+    drivetrain.setHeadingPDFL(0.085, 0, 0, 0);
 
     armServo.SetMin(750);
     armServo.SetMax(2200);
     armServo.SetDegree(armUpPos);
+}
+
+void ERCMain()
+{   
+    initialize();
 
     LCD.WriteLine("Initializing BLE Logging...");
     FEHLog::enableBLE(152);

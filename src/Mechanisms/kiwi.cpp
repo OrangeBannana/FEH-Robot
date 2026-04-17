@@ -61,3 +61,16 @@ void kiwi::drive() {
     FR.SetPercent(FRpower * powerScalar);
     FL.SetPercent(FLpower * powerScalar);
 }
+
+bool kiwi::atPose() {
+    bool atHeading = 0.5 >= abs(targetPose.h - pose.h);
+
+    float distX = targetPose.x - pose.x;
+    float distY = targetPose.y - pose.y;
+
+    float Dist = sqrt(pow(distX, 2.0) + pow(distY, 2.0));
+
+    bool atLocation = 0.1 >= Dist;
+
+    return atHeading && atLocation;
+}

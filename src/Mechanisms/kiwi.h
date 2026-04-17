@@ -10,6 +10,7 @@
 
 #include "../Drivers/FEHOTOS.h"
 #include "../Controllers/PDFL.h"
+#include "../Controllers/timer.h"
 
 class kiwi {
     public:
@@ -20,11 +21,14 @@ class kiwi {
     void setMotorDirections(int FLsign, int FRsign, int BMsign) {this->FLsign = FLsign; this->FRsign = FRsign; this->BMsign = BMsign;};
 
     void setPose(OTOSPose drivetrainPose) {pose = drivetrainPose;};
-    void setTargetPose(OTOSPose targetPose) {this->targetPose = targetPose;};
+    void setTargetPose(OTOSPose targetPose) {if (targetPose != this->targetPose) {moveTimer.start(defaultMoveTime);}; this->targetPose = targetPose;};
     void setDriveVector(OTOSPose driveVector) {this->driveVector = driveVector;};
     void drive();
+    void zero() {doPDFL(false, false, false); setDriveVector({0, 0, 0});};
 
-    void doPID(bool doX, bool doY, bool doH) {doXPDFL = doX; doYPDFL = doY; doHPDFL = doH;};
+    bool atPose();
+
+    void doPDFL(bool doX, bool doY, bool doH) {doXPDFL = doX; doYPDFL = doY; doHPDFL = doH;};
     void setPowerScalar(float powerScalar) {this->powerScalar = powerScalar;};
 
     private:
@@ -48,4 +52,8 @@ class kiwi {
         OTOSPose pose,
                  targetPose,
                  driveVector;
+
+        timer moveTimer;
+
+        float defaultMoveTime = 1.0;
 };
