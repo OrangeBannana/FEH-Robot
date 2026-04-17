@@ -76,7 +76,7 @@ OTOSPose zeroPos = {0.0, 0.0, 0.0},
          preRampPos = {-4.81, -16.50, -170.0},
          upRampPos = {-4.5, -42.0, 90},
          preDownRampPos = {8.51, -2.4, -90},
-         finishPos = {43, -2, -90};
+         finishPos = {43, -3, -90};
          
 // Robot positions for button milestone OLD - RELATIVE TO OLD RELOCALIZATION
 OTOSPose readLightPos = {6.13, -19.5, -180}, // NEW
