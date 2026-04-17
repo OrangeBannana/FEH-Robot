@@ -153,11 +153,11 @@ timer closeDoorTimer;
 timer pickupTimer;
 
 // Drive to a global coordinate using PID
-void DriveTo(double X, double Y, double Theta) {
+void DriveTo(OTOSPose pose) {
 
-    targetX = X;
-    targetY = Y;
-    targetH = Theta;
+    targetX = pose.x;
+    targetY = pose.y;
+    targetH = pose.h;
     // For both robot and world coordinates
     // Y+ is forward
     // X+ is right
@@ -327,13 +327,13 @@ void ERCMain()
 
             // Go to to start location
             case 1:
-                DriveTo(startPos.x, startPos.y, startPos.h);
+                DriveTo(startPos);
                 if (AtPose()) step = 2;
             break;
             
             // Waiting for light to signal start
             case 2:
-                DriveTo(startPos.x, startPos.y, startPos.h);
+                DriveTo(startPos);
                 if (abs(redVal - CDS.Value()) < 0.35) {
                     startBTNTimer.start(0.5);
                     step = 3;
@@ -342,7 +342,7 @@ void ERCMain()
             
             // Pressing Start Button
             case 3:
-                DriveTo(buttonPos.x, buttonPos.y, buttonPos.h);
+                DriveTo(buttonPos);
                 if (startBTNTimer.isOver()) {
                     step = 16;
                     freeTimer.start(0.0);
@@ -352,7 +352,7 @@ void ERCMain()
             // Lineup with claw up, over bucket
             case 16:
                 if (freeTimer.isOver() || forwardSpinCounter == 0) {
-                DriveTo(forwardRotatePos1.x, forwardRotatePos1.y, forwardRotatePos1.h);
+                DriveTo(forwardRotatePos1);
                 if (AtPose()) {
                     step = 17;
                     freeTimer.start(0.5);
@@ -367,7 +367,7 @@ void ERCMain()
             case 17:
                 armServo.SetDegree(armCompostPos);
                 if (freeTimer.isOver()) {
-                    DriveTo(forwardRotatePos2.x, forwardRotatePos2.y, forwardRotatePos2.h);
+                    DriveTo(forwardRotatePos2);
                     if (AtPose() || freeTimer.getTime() >= 3) {
                             step = 18;
                             freeTimer.start(0.5);
@@ -378,7 +378,7 @@ void ERCMain()
             break;
 
             case 18:
-                DriveTo(forwardRotatePos3.x, forwardRotatePos3.y, forwardRotatePos3.h);
+                DriveTo(forwardRotatePos3);
                 if (AtPose()) {
                     if (forwardSpinCounter >= 3) {
                         step = 7;
@@ -398,7 +398,7 @@ void ERCMain()
             // Position before opening door
             case 7:
                 if (freeTimer.isOver()) {
-                DriveTo(preOpenPose.x, preOpenPose.y, preOpenPose.h);
+                DriveTo(preOpenPose);
                 if (AtPose()) {
                     step = 8;
                     freeTimer.start(1.5);
@@ -410,7 +410,7 @@ void ERCMain()
             case 8:
                 armServo.SetDegree(armDoorPos);
                 if (freeTimer.getTime() >= 0.25) {
-                DriveTo(openPose.x, openPose.y, openPose.h);
+                DriveTo(openPose);
                 if ((AtPose() && freeTimer.getTime() >= 1) || freeTimer.isOver()) {
                     step = 4;
                     armServo.SetDegree(armUpPos);
@@ -424,7 +424,7 @@ void ERCMain()
             if (freeTimer.isOver()){
             armServo.SetDegree(armDownPos);
             }
-            DriveTo(prePickupPos.x, prePickupPos.y, prePickupPos.h);
+            DriveTo(prePickupPos);
                 if (AtPose()) {
                     relocTimer.start(2.0);
                     powerScale = 0.4;
@@ -453,14 +453,14 @@ void ERCMain()
             break;
             
             case 12:
-                DriveTo(preRampPos.x, preRampPos.y, preRampPos.h);
+                DriveTo(preRampPos);
                 if (AtPose()) {
                     step = 13;
                 }
             break;
 
             case 13:
-                DriveTo(upRampPos.x, upRampPos.y, upRampPos.h);
+                DriveTo(upRampPos);
                 if (AtPose()) {
                     step = 19;
                     freeTimer.start(0.5);
@@ -500,7 +500,7 @@ void ERCMain()
             break;
 
             case 23:
-            DriveTo(dropPose.x, dropPose.y, dropPose.h);
+            DriveTo(dropPose);
             if (AtPose()) {
                 freeTimer.start(0.5);
                 armServo.SetDegree(armIntermediateDropPos);
@@ -512,19 +512,19 @@ void ERCMain()
                 if(freeTimer.isOver()) {
                     armServo.SetDegree(armDropPos);
                     if (freeTimer.getTime() >= 1.0){
-                    DriveTo(postDropPose.x, postDropPose.y, postDropPose.h);
+                    DriveTo(postDropPose);
                     if (AtPose()) {
                         step = 25;
                         armServo.SetDegree(armUpPos);
                     }
                 }
                 } else {
-                    DriveTo(dropPose.x, dropPose.y, dropPose.h);
+                    DriveTo(dropPose);
                 }
             break;
 
             case 25:
-                DriveTo(readLightPos.x, readLightPos.y, readLightPos.h);
+                DriveTo(readLightPos);
                 if (AtPose()) {
                     step = 26;
                 }
@@ -553,9 +553,9 @@ void ERCMain()
             case 27:
 
             if (blueDist < redDist) {
-                DriveTo(blueButtonPos.x, blueButtonPos.y, blueButtonPos.h);
+                DriveTo(blueButtonPos);
             } else {
-                DriveTo(redButtonPos.x, redButtonPos.y, redButtonPos.h);
+                DriveTo(redButtonPos);
             }
 
             if (AtPose() || freeTimer.isOver()) {
@@ -564,14 +564,14 @@ void ERCMain()
             break;
 
             case 28:
-                DriveTo(preDownRampPos.x, preDownRampPos.y, preDownRampPos.h);
+                DriveTo(preDownRampPos);
                 if (AtPose()) {
                     step = 29;
                 }
             break;
 
             case 29:
-                DriveTo(finishPos.x, finishPos.y, finishPos.h);
+                DriveTo(finishPos);
             break;
 
         }
