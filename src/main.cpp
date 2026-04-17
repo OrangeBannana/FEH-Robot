@@ -309,6 +309,8 @@ void ERCMain()
     
     LCD.Clear();
 
+    WaitForFinalAction();
+
     // Main objective switch statement
     while (true) {
 
