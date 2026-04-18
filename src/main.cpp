@@ -14,18 +14,16 @@ OTOSPose posOffset = {1.915, -1.76847, 0.0};
 
 // Arm Positions
 int armUpPos = 180, 
-armDownPos = 128.5,
-armDropPos = 147,
-armIntermediateDropPos = (armDropPos + armUpPos) / 2,
-armCompostPos = 130,
-armDoorPos = 163,
-armTestPos = 132;
+    armDownPos = 128.5,
+    armDropPos = 147,
+    armIntermediateDropPos = (armDropPos + armUpPos) / 2,
+    armCompostPos = 130,
+    armDoorPos = 163,
+    armTestPos = 132;
 
 timer freeTimer;
 timer startBTNTimer;
 timer relocTimer;
-timer BTN2Timer;
-
 timer pickupTimer;
 
 void logMode() {
@@ -115,18 +113,15 @@ void ERCMain()
 
         switch (step) {
 
-            // If log mode is enabled stay in case 0
             case 0:
                 logMode();
             break;
 
-            // Go to to start location
             case 1:
                 drivetrain.setTargetPose(startPos);
                 if (drivetrain.atPose()) step = 2;
             break;
             
-            // Waiting for light to signal start
             case 2:
                 drivetrain.setTargetPose(startPos);
                 CDS.update();
@@ -136,7 +131,6 @@ void ERCMain()
                 }
             break;
             
-            // Pressing Start Button
             case 3:
                 drivetrain.setTargetPose(buttonPos);
                 if (startBTNTimer.isOver()) {
@@ -144,7 +138,6 @@ void ERCMain()
                 }
             break;
 
-            // Lineup with claw up, over bucket
             case 16:
                 if (freeTimer.isOver() || forwardSpinCounter == 0) {
                     drivetrain.doPDFL(true, true, true);
@@ -167,8 +160,6 @@ void ERCMain()
                             step = 18;
                             freeTimer.start(0.5);
                     }
-
-
                 }
             break;
 
@@ -187,7 +178,6 @@ void ERCMain()
                 }
             break;
 
-            // Position before opening door
             case 7:
                 if (freeTimer.isOver()) {
                     drivetrain.doPDFL(true, true, true);
@@ -199,25 +189,23 @@ void ERCMain()
                 }
             break;
             
-            // Door Opened
             case 8:
                 armServo.SetDegree(armDoorPos);
                 if (freeTimer.getTime() >= 0.25) {
-                drivetrain.setTargetPose(openPose);
-                if ((drivetrain.atPose() && freeTimer.getTime() >= 1) || freeTimer.isOver()) {
-                    step = 4;
-                    armServo.SetDegree(armUpPos);
-                    freeTimer.start(.65);
+                    drivetrain.setTargetPose(openPose);
+                    if ((drivetrain.atPose() && freeTimer.getTime() >= 1) || freeTimer.isOver()) {
+                        step = 4;
+                        armServo.SetDegree(armUpPos);
+                        freeTimer.start(.65);
+                    }
                 }
-            }
             break;
 
-            // Go to position to pickup bucket and move arm down to be ready
             case 4:
-            if (freeTimer.isOver()){
-            armServo.SetDegree(armDownPos);
-            }
-            drivetrain.setTargetPose(prePickupPos);
+                if (freeTimer.isOver()){
+                    armServo.SetDegree(armDownPos);
+                }
+                drivetrain.setTargetPose(prePickupPos);
                 if (drivetrain.atPose()) {
                     relocTimer.start(2.0);
                     drivetrain.setPowerScalar((7/12) * 0.4);
@@ -226,7 +214,6 @@ void ERCMain()
                 }
             break;
             
-            // Slowly drive forward into bucket, if robot is stopped or x coordinate goes past bucket position then go to next state
             case 5:
                 drivetrain.setDriveVector({0, 0.25, 0});
                 drivetrain.doPDFL(false, false, true);
@@ -237,7 +224,6 @@ void ERCMain()
                 }
             break;
 
-            // Pickup up (wait time to wait for servo to move)
             case 6:
                 armServo.SetDegree(armUpPos);
                 if (pickupTimer.isOver()) {
