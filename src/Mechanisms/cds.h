@@ -7,8 +7,9 @@ enum CDSColor {
 };
 
 class cds {
+
     public:
-        cds(FEHIO::FEHIOPin pin) {AnalogInputPin CDS(pin);};
+        cds(FEHIO::FEHIOPin pin) : CDS(pin) {};
 
         void update() {
             lastReadValue = CDS.Value();
@@ -31,7 +32,7 @@ class cds {
 
 
     private:
-
+    
         AnalogInputPin CDS;
 
         float lastReadValue;

@@ -1,11 +1,9 @@
 #include "kiwi.h"
 
-kiwi::kiwi(FEHMotor::FEHMotorPort FLport, FEHMotor::FEHMotorPort FRport, FEHMotor::FEHMotorPort BMport, double maxVoltage) {
+kiwi::kiwi(FEHMotor::FEHMotorPort FLport, FEHMotor::FEHMotorPort FRport, FEHMotor::FEHMotorPort BMport, double maxVoltage) :
+FL(FLport, maxVoltage), FR(FRport, maxVoltage), BM(BMport, maxVoltage)
+{
     this->maxVoltage = maxVoltage;
-
-    FEHMotor FL(FLport, maxVoltage);
-    FEHMotor FR(FRport, maxVoltage);
-    FEHMotor BM(BMport, maxVoltage);
 }
 
 void kiwi::drive() {
@@ -62,15 +60,19 @@ void kiwi::drive() {
     FL.SetPercent(FLpower * powerScalar);
 }
 
-bool kiwi::atPose() {
-    bool atHeading = 0.5 >= abs(targetPose.h - pose.h);
-
+bool kiwi::atPoseXY() {
     float distX = targetPose.x - pose.x;
     float distY = targetPose.y - pose.y;
 
     float Dist = sqrt(pow(distX, 2.0) + pow(distY, 2.0));
 
-    bool atLocation = 0.1 >= Dist;
+    return  0.1 >= Dist;
+}
 
-    return atHeading && atLocation;
+bool kiwi::atPoseH() {
+    return 0.5 >= abs(targetPose.h - pose.h);
+}
+
+bool kiwi::atPose() {
+    return atPoseH() && atPoseXY();
 }

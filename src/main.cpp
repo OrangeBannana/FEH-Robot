@@ -1,7 +1,8 @@
 #include "main.h"
 
-// Enable test mode?
+// Enable test modes
 bool testMode = false;
+bool controllerTestMode = true;
 
 kiwi drivetrain(FEHMotor::Motor2, FEHMotor::Motor3, FEHMotor::Motor1, 12);
 cds CDS(FEHIO::Pin0);
@@ -49,6 +50,7 @@ void initialize() {
     drivetrain.setPowerScalar(7/12);
     drivetrain.setTranslationPDFL(1.3, 0, 0, 0);
     drivetrain.setHeadingPDFL(0.085, 0, 0, 0);
+    drivetrain.setTargetPose({0, 0, 0});
 
     armServo.SetMin(750);
     armServo.SetMax(2200);
@@ -99,6 +101,10 @@ void ERCMain()
     if (testMode) {
         step = 0;
     }
+
+    if (controllerTestMode) {
+        step = -1;
+    }
     
     LCD.Clear();
 
@@ -112,6 +118,34 @@ void ERCMain()
         drivetrain.setPose(pose);
 
         switch (step) {
+
+            case -1:
+                if (drivetrain.atPoseXY()) {
+                    drivetrain.setTargetPose(controllerTestPose2);
+                    step = -2;
+                }
+            break;
+
+            case -2:
+                if (drivetrain.atPoseXY()) {
+                    drivetrain.setTargetPose(controllerTestPose3);
+                    step = -3;
+                }
+            break;
+
+            case -3:
+                if (drivetrain.atPoseXY()) {
+                    drivetrain.setTargetPose(controllerTestPose4);
+                    step = -4;
+                }
+            break;
+
+            case -4:
+                if (drivetrain.atPoseXY()) {
+                    drivetrain.setTargetPose(controllerTestPose1);
+                    step = -1;
+                }
+            break;
 
             case 0:
                 logMode();

@@ -1,5 +1,12 @@
 #include "PDFL.h"
 
+PDFL::PDFL() {
+    kP = 0;
+    kD = 0;
+    kF = 0;
+    kL = 0;
+}
+
 PDFL::PDFL(float kP, float kD, float kF, float kL) {
     this->kP = kP;
     this->kD = kD;

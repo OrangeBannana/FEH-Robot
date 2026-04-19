@@ -27,6 +27,8 @@ class kiwi {
     void zero() {doPDFL(false, false, false); setDriveVector({0, 0, 0});};
 
     bool atPose();
+    bool atPoseXY();
+    bool atPoseH();
     bool timedOut() {return moveTimer.isOver();};
     float moveTime() {return moveTimer.getTime();};
     
