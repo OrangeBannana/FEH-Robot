@@ -1,11 +1,5 @@
 #include "kiwi.h"
 
-kiwi::kiwi(FEHMotor::FEHMotorPort FLport, FEHMotor::FEHMotorPort FRport, FEHMotor::FEHMotorPort BMport, double maxVoltage) :
-FL(FLport, maxVoltage), FR(FRport, maxVoltage), BM(BMport, maxVoltage)
-{
-    this->maxVoltage = maxVoltage;
-}
-
 void kiwi::drive() {
 
     // Calculate PDFL output
@@ -47,13 +41,18 @@ void kiwi::drive() {
     double FRpower = (1.0/2.0) * vX - (sqrt(3) / 2) * vY + vTheta;
     double FLpower = (1.0/2.0) * vX + (sqrt(3) / 2) * vY + vTheta;
 
+    //FEHLog::printf("FL:%.1f FR:%.1f BM:%.1f\n", FLpower, FRpower, BMpower);
+
     double maxPower = max(abs(BMpower), max(abs(FRpower), max(abs(FLpower), 1.0)));
 
     BMpower = (BMpower / maxPower) * 100 * BMsign;
     FRpower = (FRpower / maxPower) * 100 * FRsign;
     FLpower = (FLpower / maxPower) * 100 * FLsign;
 
-    FEHLog::printf("FL:%.1f FR:%.1f BM:%.1f\n", FLpower, FRpower, BMpower);
+    //FEHLog::printf("FL:%.1f FR:%.1f BM:%.1f\n", FLpower, FRpower, BMpower);
+    FEHLog::printf("tError: %0.1f hError: %0.1f\n", tError, hError);
+    //FEHLog::printf("tOut: %0.1f hOut: %0.1f\n", tController.output, hController.output);
+    //FEHLog::printf("PDFLX: %d PDFLY: %d PDFLH: %d\n", doXPDFL, doYPDFL, doHPDFL);
 
     BM.SetPercent(BMpower * powerScalar);
     FR.SetPercent(FRpower * powerScalar);

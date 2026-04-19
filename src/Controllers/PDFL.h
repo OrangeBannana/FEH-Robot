@@ -49,6 +49,8 @@ class PDFL {
         float output = 0;
 
     private:
+
+        int signum(float val) {return (0.0f < val) - (val < 0.0f);};
         // Constants
         float
             kP = 0,

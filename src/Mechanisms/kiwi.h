@@ -15,10 +15,10 @@
 class kiwi {
     public:
 
-    kiwi(FEHMotor::FEHMotorPort FLport, FEHMotor::FEHMotorPort FRport, FEHMotor::FEHMotorPort BMport, double maxVoltage);
-    void setTranslationPDFL(float p, float d, float f, float l) {PDFL tController(p, d, f, l);};
-    void setHeadingPDFL(float p, float d, float f, float l) {PDFL hController(p, d, f, l);};
-    void setMotorDirections(int FLsign, int FRsign, int BMsign) {this->FLsign = FLsign; this->FRsign = FRsign; this->BMsign = BMsign;};
+    kiwi(FEHMotor::FEHMotorPort FLport, FEHMotor::FEHMotorPort FRport, FEHMotor::FEHMotorPort BMport, double maxVoltage) : FL(FLport, maxVoltage), FR(FRport, maxVoltage), BM(BMport, maxVoltage) {this->maxVoltage = maxVoltage;};
+    void setTranslationPDFL(float p, float d, float f, float l) {tController.setPIDF(p, d, f, l);};
+    void setHeadingPDFL(float p, float d, float f, float l) {hController.setPIDF(p, d, f, l);};
+    void setMotorDirections(float FLsign, float FRsign, float BMsign) {this->FLsign = FLsign; this->FRsign = FRsign; this->BMsign = BMsign;};
 
     void setPose(OTOSPose drivetrainPose) {pose = drivetrainPose;};
     void setTargetPose(OTOSPose targetPose) {if (targetPose != this->targetPose) {moveTimer.start(moveTimeout);}; this->targetPose = targetPose;};
@@ -41,16 +41,18 @@ class kiwi {
         FEHMotor FR;
         FEHMotor BM;
 
-        double maxVoltage = 0;
+        double maxVoltage;
 
-        bool doXPDFL, doYPDFL, doHPDFL;
+        bool doXPDFL = true,
+             doYPDFL = true,
+             doHPDFL = true;
 
         PDFL tController;
         PDFL hController;
 
-        int FLsign = 1;
-        int FRsign = 1;
-        int BMsign = 1;
+        float FLsign = 1.0f;
+        float FRsign = 1.0f;
+        float BMsign = 1.0f;
 
         float powerScalar;
 

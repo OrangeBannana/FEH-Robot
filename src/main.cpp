@@ -4,7 +4,7 @@
 bool testMode = false;
 bool controllerTestMode = true;
 
-kiwi drivetrain(FEHMotor::Motor2, FEHMotor::Motor3, FEHMotor::Motor1, 12);
+kiwi drivetrain(FEHMotor::Motor2, FEHMotor::Motor3, FEHMotor::Motor1, 12.0);
 cds CDS(FEHIO::Pin0);
 FEHServo armServo(FEHServo::Servo0);
 
@@ -46,10 +46,12 @@ void logMode() {
 }
 
 void initialize() {
-    drivetrain.setMotorDirections(-1, -1, -1);
-    drivetrain.setPowerScalar(7/12);
-    drivetrain.setTranslationPDFL(1.3, 0, 0, 0);
-    drivetrain.setHeadingPDFL(0.085, 0, 0, 0);
+    drivetrain.setMotorDirections(-1.0f, -1.0f, -1.0f);
+    drivetrain.setPowerScalar(1.0f);
+    //drivetrain.setTranslationPDFL(1.3, 0, 0, 0);
+    drivetrain.setTranslationPDFL(0.5, 0, 0, 0.0575);
+    //drivetrain.setHeadingPDFL(0.085, 0, 0, 0);
+    drivetrain.setHeadingPDFL(0.0, 0, 0, 0);
     drivetrain.setTargetPose({0, 0, 0});
 
     armServo.SetMin(750);
@@ -58,7 +60,7 @@ void initialize() {
 }
 
 void connectSystems() {
-    RCS.InitializeTouchMenu("0800A2XNH");
+    //RCS.InitializeTouchMenu("0800A2XNH");
     LCD.WriteLine("RCS Connected");
 
     LCD.WriteLine("Initializing BLE Logging...");
@@ -108,7 +110,7 @@ void ERCMain()
     
     LCD.Clear();
 
-    WaitForFinalAction();
+    // WaitForFinalAction();
 
     // Main objective switch statement
     while (true) {

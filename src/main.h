@@ -48,6 +48,6 @@ OTOSPose forwardRotatePos1 = {10.8, -6.8, 0},
          backRotatePos2 = {17, -9.00, 0};
 
 OTOSPose controllerTestPose1 = {0, 0, 0},
-         controllerTestPose2 = {0, 10, 90},
+         controllerTestPose2 = {0, 10, -90},
          controllerTestPose3 = {10, 10, 180},
-         controllerTestPose4 = {10, 0, -90};
+         controllerTestPose4 = {10, 0, 90};

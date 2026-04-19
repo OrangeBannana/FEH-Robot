@@ -8,10 +8,7 @@ PDFL::PDFL() {
 }
 
 PDFL::PDFL(float kP, float kD, float kF, float kL) {
-    this->kP = kP;
-    this->kD = kD;
-    this->kF = kF;
-    this->kL = kL;
+    setPIDF(kP, kD, kF, kL);
 }
 
 void PDFL::setPIDF(float kP, float kD, float kF, float kL) {
@@ -40,5 +37,5 @@ void PDFL::update(float value) {
 
     output = P + D + kF;
 
-    output = (abs(output) >= kL) ? output : ((output * kL) / abs(output));
+    output = (kL == 0 || abs(output) >= kL) ? output :  kL * signum(error);
 }
