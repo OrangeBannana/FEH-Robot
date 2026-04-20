@@ -47,6 +47,7 @@ class PDFL {
         void update(float value);
         float getTime() {return time;};
 
+        float PDFoutput = 0;
         float output = 0;
 
         static int signum(float val) {return (0.0f < val) - (val < 0.0f);};

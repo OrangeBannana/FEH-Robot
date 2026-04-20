@@ -38,8 +38,8 @@ void logMode() {
 
 void initialize() {
     drivetrain.setMotorDirections(-1.0f, -1.0f, -1.0f);
-    drivetrain.setTranslationPDFL(0.55, 18.0, 0, 0.08);
-    drivetrain.setHeadingPDFL(0.03, 0.0, 0, 0.0);
+    drivetrain.setTranslationPDFL(0.45, 20.0, 0, 0.06);
+    drivetrain.setHeadingPDFL(0.025, 0.0, 0, 0.0);
     drivetrain.setTargetPose({0, 0, 0});
 
     armServo.SetMin(750);
@@ -48,7 +48,7 @@ void initialize() {
 }
 
 void connectSystems() {
-    RCS.InitializeTouchMenu("0800A2XNH");
+    // RCS.InitializeTouchMenu("0800A2XNH");
     LCD.WriteLine("RCS Connected");
 
     LCD.WriteLine("Initializing BLE Logging...");
@@ -99,6 +99,7 @@ void ERCMain()
     LCD.Clear();
 
     WaitForFinalAction();
+    freeTimer.start(3.0);
 
     // Main objective switch statement
     while (true) {
@@ -110,30 +111,34 @@ void ERCMain()
         switch (step) {
 
             case -1:
-                if (drivetrain.atPose()) {
+                if (drivetrain.atPose() && freeTimer.isOver()) {
                     drivetrain.setTargetPose(controllerTestPose2);
                     step = -2;
+                    freeTimer.start(3.0);
                 }
             break;
 
             case -2:
-                if (drivetrain.atPose()) {
+                if (drivetrain.atPose() && freeTimer.isOver()) {
                     drivetrain.setTargetPose(controllerTestPose3);
                     step = -3;
+                    freeTimer.start(3.0);
                 }
             break;
 
             case -3:
-                if (drivetrain.atPose()) {
+                if (drivetrain.atPose() && freeTimer.isOver()) {
                     drivetrain.setTargetPose(controllerTestPose4);
                     step = -4;
+                    freeTimer.start(3.0);
                 }
             break;
 
             case -4:
-                if (drivetrain.atPose()) {
+                if (drivetrain.atPose() && freeTimer.isOver()) {
                     drivetrain.setTargetPose(controllerTestPose1);
                     step = -1;
+                    freeTimer.start(3.0);
                 }
             break;
 
@@ -149,7 +154,7 @@ void ERCMain()
             case 2:
                 drivetrain.setTargetPose(startPos);
                 CDS.update();
-                if (CDS.Color() == CDSColor::Red) {
+                if (CDS.Color() == CDSColor::Red || true) {
                     startBTNTimer.start(0.5);
                     step = 3;
                 }
@@ -164,12 +169,10 @@ void ERCMain()
 
             case 16:
                 if (freeTimer.isOver() || forwardSpinCounter == 0) {
-                    drivetrain.doPDFL(true, true, true);
                     drivetrain.setTargetPose(forwardRotatePos1);
                     if (drivetrain.atPose()) {
                         step = 17;
                         freeTimer.start(0.5);
-                        drivetrain.zero();
                         forwardSpinCounter++;
                     }
                 }
@@ -178,11 +181,13 @@ void ERCMain()
             case 17:
                 armServo.SetDegree(armCompostPos);
                 if (freeTimer.isOver()) {
-                    drivetrain.doPDFL(true, true, true);
                     drivetrain.setTargetPose(forwardRotatePos2);
-                    if (drivetrain.atPose() || freeTimer.getTime() >= 3) {
+                    drivetrain.doPDFL(true, false, true);
+                    drivetrain.setDriveVector({0, 0.5, 0});
+                    if (drivetrain.atPose() || freeTimer.getTime() >= 3 || (velPose.magnitude() < 0.4 && drivetrain.moveTime() >= 0.1)) {
                             step = 18;
                             freeTimer.start(0.5);
+                            drivetrain.doPDFL(true, true, true);
                     }
                 }
             break;
@@ -198,7 +203,6 @@ void ERCMain()
                         freeTimer.start(0.25);
                     }
                     armServo.SetDegree(armUpPos);
-                    drivetrain.zero();
                 }
             break;
 
@@ -212,12 +216,12 @@ void ERCMain()
                     }
                 }
             break;
-            
+
             case 8:
                 armServo.SetDegree(armDoorPos);
                 if (freeTimer.getTime() >= 0.25) {
                     drivetrain.setTargetPose(openPose);
-                    if ((drivetrain.atPose() && freeTimer.getTime() >= 1) || freeTimer.isOver()) {
+                    if ((drivetrain.atPose() && freeTimer.getTime() >= 1) || freeTimer.isOver() || (velPose.h < 0.1 && velPose.magnitude() < 0.35 && drivetrain.moveTime() >= 0.1)) {
                         step = 4;
                         armServo.SetDegree(armUpPos);
                         freeTimer.start(.65);
@@ -238,7 +242,7 @@ void ERCMain()
             break;
             
             case 5:
-                drivetrain.setDriveVector({0, 0.15, 0});
+                drivetrain.setDriveVector({0, 0.2, 0});
                 drivetrain.doPDFL(false, false, true);
                 if ((abs(velPose.x) < 0.02 &&  abs(velPose.y) < 0.02 && abs(velPose.h) < 0.02 && relocTimer.isOver()) || abs(pose.x) >= abs(pickupPos.x) || freeTimer.isOver()) {
                     step = 6;
@@ -251,6 +255,7 @@ void ERCMain()
                 armServo.SetDegree(armUpPos);
                 if (pickupTimer.isOver()) {
                     step = 12;
+                    drivetrain.setHeadingPDFL(0.015, 0.0, 0, 0.0);
                 }
             break;
             
@@ -258,22 +263,29 @@ void ERCMain()
                 drivetrain.setTargetPose(preRampPos);
                 drivetrain.doPDFL(true, true, true);
                 if (drivetrain.atPose()) {
+                    drivetrain.doPDFL(false, false, true);
+                    drivetrain.setDriveVector({0, 1.0, 0});
                     step = 13;
                 }
             break;
 
             case 13:
-                drivetrain.setTargetPose(upRampPos);
-                if (drivetrain.atPose()) {
+                if (drivetrain.moveTime() >= 1.5) {
+                    drivetrain.setTargetPose(upRampPos);
+                    drivetrain.doPDFL(true, true, true);
+                }
+
+                if (drivetrain.atPose() && drivetrain.moveTime() >= 1.6) {
                     step = 19;
                     freeTimer.start(0.5);
                     drivetrain.doPDFL(false, false, false);
+                    drivetrain.setHeadingPDFL(0.03, 0.0, 0, 0.0);
                 }
             break;
 
             case 19:
                 drivetrain.setDriveVector({0, 0.25, 0});
-                if ((abs(velPose.x) <= 0.2 && freeTimer.isOver()) || freeTimer.getTime() >= 5) {
+                if ((abs(velPose.x) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 5) {
                     step = 20;
                     freeTimer.start(0.5);
                 }
@@ -281,22 +293,22 @@ void ERCMain()
 
             case 20:
                 drivetrain.setDriveVector({-0.25, 0.1, -0.05});
-                if ((abs(velPose.y) <= 0.1 && freeTimer.isOver()) || freeTimer.getTime() >= 8) {
+                if ((abs(velPose.y) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 8) {
                     step = 21;
                     freeTimer.start(0.5);
                 }
             break;
 
             case 21:
-                drivetrain.setDriveVector({-0.1, 0.1, 0});
-                if ((abs(velPose.y) <= 0.1 && abs(velPose.x) <= 0.1 &&  freeTimer.isOver()) || freeTimer.getTime() >= 7) {
+                drivetrain.setDriveVector({-0.25, 0.25, 0});
+                if ((abs(velPose.y) <= 0.15 && abs(velPose.x) <= 0.15 &&  freeTimer.isOver()) || freeTimer.getTime() >= 7) {
                     step = 22;
-                    freeTimer.start(0.5);
                 }
             break;
 
             case 22:
                 drivetrain.zero();
+                drivetrain.drive();
                 Sleep(0.5);
                 OTOS.resetTracking();
                 Sleep(0.5);
@@ -337,6 +349,7 @@ void ERCMain()
 
             case 26:
                 drivetrain.zero();
+                drivetrain.drive();
                 Sleep(0.5);
                 CDS.update();
 

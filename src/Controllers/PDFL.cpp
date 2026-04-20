@@ -35,9 +35,9 @@ void PDFL::update(float value) {
     P = kP * error;
     D = (deltaTime != 0) ? kD * deltaErrorDeltaTime : 0;
 
-    output = P + D + kF;
+    PDFoutput = P + D + kF;
 
-    output = (kL == 0 || abs(output) >= kL) ? output :  kL * signum(error);
+    output = (kL == 0 || abs(PDFoutput) >= kL) ? PDFoutput :  kL * signum(error);
 
     errorPrevious = error;
     timePrevious = time;

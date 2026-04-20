@@ -1,6 +1,8 @@
 // Ported from Sparkfun implementation
 #include <Wire.h>
 #include <stdint.h>
+#include <math.h>
+
 
 struct OTOSPose {
     float x, y, h;
@@ -12,6 +14,11 @@ struct OTOSPose {
     bool operator!=(const OTOSPose& other) const {
         return !(*this == other);
     }
+
+    float magnitude() {
+        return sqrt(pow(x,2) + pow(y,2));
+    }
+
 };
 
 enum OTOSLinearUnit {

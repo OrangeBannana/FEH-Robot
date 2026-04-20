@@ -24,16 +24,24 @@ void kiwi::drive() {
 
     float hRads = (pose.h * PI) / 180;
 
-    float vX1 = ((targetX - pose.x) / tError) * -tController.output;
-    float vY1 = ((targetY - pose.y) / tError) * -tController.output;
+    float tOutput =  tController.output;
+    float hOutput = hController.output;
+
+    if (atPose()){
+        tOutput = tController.PDFoutput;
+        hOutput = hController.PDFoutput;
+    }
+
+    float vX1 = ((targetX - pose.x) / tError) * -tOutput;
+    float vY1 = ((targetY - pose.y) / tError) * -tOutput;
 
     // Drive commands based on PDFL
     float vX2 = vX1 * cos(hRads)  + vY1 * sin(hRads);
     float vY2 = -vX1 * sin(hRads) + vY1 * cos(hRads);
-    float vTheta = -hController.output;
+    float vTheta = -hOutput;
 
     // Clamp vTheta to avoid current limit
-    vTheta = (abs(vTheta) > (7.0f/12.0f)) ? (7.0f/12.0f) * PDFL::signum(vTheta) :  vTheta;
+    vTheta = (abs(vTheta) > (9.0f/12.0f)) ? (9.0f/12.0f) * PDFL::signum(vTheta) :  vTheta;
 
     // Asymmetric Translational Slew Rate Limiting
     float v = sqrt(pow(vX, 2) + pow(vY, 2));
