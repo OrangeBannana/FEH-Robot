@@ -13,15 +13,6 @@ OTOSPose pose;
 OTOSPose velPose;
 OTOSPose posOffset = {1.915, -1.76847, 0.0};
 
-// Arm Positions
-int armUpPos = 180, 
-    armDownPos = 128.5,
-    armDropPos = 147,
-    armIntermediateDropPos = (armDropPos + armUpPos) / 2,
-    armCompostPos = 130,
-    armDoorPos = 163,
-    armTestPos = 132;
-
 timer freeTimer;
 timer startBTNTimer;
 timer relocTimer;
@@ -57,7 +48,7 @@ void initialize() {
 }
 
 void connectSystems() {
-    //RCS.InitializeTouchMenu("0800A2XNH");
+    RCS.InitializeTouchMenu("0800A2XNH");
     LCD.WriteLine("RCS Connected");
 
     LCD.WriteLine("Initializing BLE Logging...");
@@ -107,7 +98,7 @@ void ERCMain()
     
     LCD.Clear();
 
-    // WaitForFinalAction();
+    WaitForFinalAction();
 
     // Main objective switch statement
     while (true) {
@@ -158,7 +149,7 @@ void ERCMain()
             case 2:
                 drivetrain.setTargetPose(startPos);
                 CDS.update();
-                if (CDS.Color() == CDSColor::Red || true) {
+                if (CDS.Color() == CDSColor::Red) {
                     startBTNTimer.start(0.5);
                     step = 3;
                 }

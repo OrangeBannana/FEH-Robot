@@ -51,3 +51,12 @@ OTOSPose controllerTestPose1 = {0, 0, 0},
          controllerTestPose2 = {0, 10, -90},
          controllerTestPose3 = {10, 10, 0},
          controllerTestPose4 = {10, 0, 180};
+
+// Arm Positions
+int armUpPos = 180, 
+    armDownPos = 128.5,
+    armDropPos = 147,
+    armIntermediateDropPos = (armDropPos + armUpPos) / 2,
+    armCompostPos = 130,
+    armDoorPos = 163,
+    armTestPos = 132;
