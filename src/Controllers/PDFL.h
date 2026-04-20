@@ -45,12 +45,14 @@ class PDFL {
         void setPIDF(float p, float i, float d, float f);
         void setTarget(float target);
         void update(float value);
+        float getTime() {return time;};
 
         float output = 0;
 
+        static int signum(float val) {return (0.0f < val) - (val < 0.0f);};
+
     private:
 
-        int signum(float val) {return (0.0f < val) - (val < 0.0f);};
         // Constants
         float
             kP = 0,

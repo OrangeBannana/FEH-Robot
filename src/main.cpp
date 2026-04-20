@@ -2,7 +2,7 @@
 
 // Enable test modes
 bool testMode = false;
-bool controllerTestMode = true;
+bool controllerTestMode = false;
 
 kiwi drivetrain(FEHMotor::Motor2, FEHMotor::Motor3, FEHMotor::Motor1, 12.0);
 cds CDS(FEHIO::Pin0);
@@ -47,11 +47,8 @@ void logMode() {
 
 void initialize() {
     drivetrain.setMotorDirections(-1.0f, -1.0f, -1.0f);
-    drivetrain.setPowerScalar(1.0f);
-    //drivetrain.setTranslationPDFL(1.3, 0, 0, 0);
-    drivetrain.setTranslationPDFL(0.5, 0, 0, 0.0575);
-    //drivetrain.setHeadingPDFL(0.085, 0, 0, 0);
-    drivetrain.setHeadingPDFL(0.0, 0, 0, 0);
+    drivetrain.setTranslationPDFL(0.55, 18.0, 0, 0.08);
+    drivetrain.setHeadingPDFL(0.03, 0.0, 0, 0.0);
     drivetrain.setTargetPose({0, 0, 0});
 
     armServo.SetMin(750);
@@ -122,28 +119,28 @@ void ERCMain()
         switch (step) {
 
             case -1:
-                if (drivetrain.atPoseXY()) {
+                if (drivetrain.atPose()) {
                     drivetrain.setTargetPose(controllerTestPose2);
                     step = -2;
                 }
             break;
 
             case -2:
-                if (drivetrain.atPoseXY()) {
+                if (drivetrain.atPose()) {
                     drivetrain.setTargetPose(controllerTestPose3);
                     step = -3;
                 }
             break;
 
             case -3:
-                if (drivetrain.atPoseXY()) {
+                if (drivetrain.atPose()) {
                     drivetrain.setTargetPose(controllerTestPose4);
                     step = -4;
                 }
             break;
 
             case -4:
-                if (drivetrain.atPoseXY()) {
+                if (drivetrain.atPose()) {
                     drivetrain.setTargetPose(controllerTestPose1);
                     step = -1;
                 }
@@ -161,7 +158,7 @@ void ERCMain()
             case 2:
                 drivetrain.setTargetPose(startPos);
                 CDS.update();
-                if (CDS.Color() == CDSColor::Red) {
+                if (CDS.Color() == CDSColor::Red || true) {
                     startBTNTimer.start(0.5);
                     step = 3;
                 }
@@ -244,14 +241,13 @@ void ERCMain()
                 drivetrain.setTargetPose(prePickupPos);
                 if (drivetrain.atPose()) {
                     relocTimer.start(2.0);
-                    drivetrain.setPowerScalar((7/12) * 0.4);
                     step = 5;
                     freeTimer.start(4.0);
                 }
             break;
             
             case 5:
-                drivetrain.setDriveVector({0, 0.25, 0});
+                drivetrain.setDriveVector({0, 0.15, 0});
                 drivetrain.doPDFL(false, false, true);
                 if ((abs(velPose.x) < 0.02 &&  abs(velPose.y) < 0.02 && abs(velPose.h) < 0.02 && relocTimer.isOver()) || abs(pose.x) >= abs(pickupPos.x) || freeTimer.isOver()) {
                     step = 6;
@@ -263,7 +259,6 @@ void ERCMain()
             case 6:
                 armServo.SetDegree(armUpPos);
                 if (pickupTimer.isOver()) {
-                    drivetrain.setPowerScalar(7/12);
                     step = 12;
                 }
             break;
@@ -286,7 +281,7 @@ void ERCMain()
             break;
 
             case 19:
-                drivetrain.setDriveVector({0, 0.45, 0});
+                drivetrain.setDriveVector({0, 0.25, 0});
                 if ((abs(velPose.x) <= 0.2 && freeTimer.isOver()) || freeTimer.getTime() >= 5) {
                     step = 20;
                     freeTimer.start(0.5);
@@ -294,7 +289,7 @@ void ERCMain()
                 break;
 
             case 20:
-                drivetrain.setDriveVector({-0.35, 0.1, -0.05});
+                drivetrain.setDriveVector({-0.25, 0.1, -0.05});
                 if ((abs(velPose.y) <= 0.1 && freeTimer.isOver()) || freeTimer.getTime() >= 8) {
                     step = 21;
                     freeTimer.start(0.5);
@@ -302,7 +297,7 @@ void ERCMain()
             break;
 
             case 21:
-                drivetrain.setDriveVector({-0.15, 0.15, 0});
+                drivetrain.setDriveVector({-0.1, 0.1, 0});
                 if ((abs(velPose.y) <= 0.1 && abs(velPose.x) <= 0.1 &&  freeTimer.isOver()) || freeTimer.getTime() >= 7) {
                     step = 22;
                     freeTimer.start(0.5);

@@ -15,7 +15,7 @@
 class kiwi {
     public:
 
-    kiwi(FEHMotor::FEHMotorPort FLport, FEHMotor::FEHMotorPort FRport, FEHMotor::FEHMotorPort BMport, double maxVoltage) : FL(FLport, maxVoltage), FR(FRport, maxVoltage), BM(BMport, maxVoltage) {this->maxVoltage = maxVoltage;};
+    kiwi(FEHMotor::FEHMotorPort FLport, FEHMotor::FEHMotorPort FRport, FEHMotor::FEHMotorPort BMport, double maxVoltage) : FL(FLport, maxVoltage), FR(FRport, maxVoltage), BM(BMport, maxVoltage) {this->maxVoltage = maxVoltage; voltageLimit = maxVoltage;};
     void setTranslationPDFL(float p, float d, float f, float l) {tController.setPIDF(p, d, f, l);};
     void setHeadingPDFL(float p, float d, float f, float l) {hController.setPIDF(p, d, f, l);};
     void setMotorDirections(float FLsign, float FRsign, float BMsign) {this->FLsign = FLsign; this->FRsign = FRsign; this->BMsign = BMsign;};
@@ -34,7 +34,7 @@ class kiwi {
     
 
     void doPDFL(bool doX, bool doY, bool doH) {doXPDFL = doX; doYPDFL = doY; doHPDFL = doH;};
-    void setPowerScalar(float powerScalar) {this->powerScalar = powerScalar;};
+    void setVoltageLimit(float voltageLimit) {this->voltageLimit = voltageLimit;};
 
     private:
         FEHMotor FL;
@@ -54,7 +54,11 @@ class kiwi {
         float FRsign = 1.0f;
         float BMsign = 1.0f;
 
-        float powerScalar;
+        float voltageLimit;
+
+        float vX,
+              vY,
+              vTheta;
 
         OTOSPose pose,
                  targetPose,
@@ -63,4 +67,7 @@ class kiwi {
         timer moveTimer;
 
         float moveTimeout = 1.0;
+
+        float upSlewLimit = 0.1;
+        float downSlewLimit = 0.07;
 };

@@ -28,35 +28,70 @@ void kiwi::drive() {
     float vY1 = ((targetY - pose.y) / tError) * -tController.output;
 
     // Drive commands based on PDFL
-    float vX = vX1 * cos(hRads)  + vY1 * sin(hRads);
-    float vY = -vX1 * sin(hRads) + vY1 * cos(hRads);
+    float vX2 = vX1 * cos(hRads)  + vY1 * sin(hRads);
+    float vY2 = -vX1 * sin(hRads) + vY1 * cos(hRads);
     float vTheta = -hController.output;
+
+    // Clamp vTheta to avoid current limit
+    vTheta = (abs(vTheta) > (7.0f/12.0f)) ? (7.0f/12.0f) * PDFL::signum(vTheta) :  vTheta;
+
+    // Asymmetric Translational Slew Rate Limiting
+    float v = sqrt(pow(vX, 2) + pow(vY, 2));
+    float v2 = sqrt(pow(vX2, 2) + pow(vY2, 2));
+
+    // Anti Windup
+    if (v2 > 1.0) {
+        vX2 = (vX2 / v2);
+        vY2 = (vY2 / v2);
+    }
+
+    float dVX = vX2 - vX;
+    float dVY = vY2 - vY;
+    float dV = sqrt(pow(dVX, 2) + pow(dVY, 2));
+
+    if (v2 > v) {
+        if (dV > upSlewLimit) {
+            vX = vX + ((dVX / dV) * upSlewLimit);
+            vY = vY + ((dVY / dV) * upSlewLimit);
+        } else {
+            vX = vX2;
+            vY = vY2;
+        }
+    } else {
+        if (dV > downSlewLimit) {
+            vX = vX + ((dVX / dV) * downSlewLimit);
+            vY = vY + ((dVY / dV) * downSlewLimit);
+        } else {
+            vX = vX2;
+            vY = vY2;
+        }
+    }
 
     // Do not apply PDFL control if disabled
     if (!doXPDFL) {vX = driveVector.x;};
     if (!doYPDFL) {vY = driveVector.y;};
     if (!doHPDFL) {vTheta = driveVector.h;};
 
-    double BMpower = -vX + vTheta;
-    double FRpower = (1.0/2.0) * vX - (sqrt(3) / 2) * vY + vTheta;
-    double FLpower = (1.0/2.0) * vX + (sqrt(3) / 2) * vY + vTheta;
+    float BMpower = -vX + vTheta;
+    float FRpower = (1.0/2.0) * vX - (sqrt(3) / 2) * vY + vTheta;
+    float FLpower = (1.0/2.0) * vX + (sqrt(3) / 2) * vY + vTheta;
 
     //FEHLog::printf("FL:%.1f FR:%.1f BM:%.1f\n", FLpower, FRpower, BMpower);
 
-    double maxPower = max(abs(BMpower), max(abs(FRpower), max(abs(FLpower), 1.0)));
+    double maxPower = (max(abs(BMpower), max(abs(FRpower), max(abs(FLpower), (maxVoltage / voltageLimit)))));
 
     BMpower = (BMpower / maxPower) * 100 * BMsign;
     FRpower = (FRpower / maxPower) * 100 * FRsign;
     FLpower = (FLpower / maxPower) * 100 * FLsign;
 
     //FEHLog::printf("FL:%.1f FR:%.1f BM:%.1f\n", FLpower, FRpower, BMpower);
-    FEHLog::printf("tError: %0.1f hError: %0.1f\n", tError, hError);
     //FEHLog::printf("tOut: %0.1f hOut: %0.1f\n", tController.output, hController.output);
     //FEHLog::printf("PDFLX: %d PDFLY: %d PDFLH: %d\n", doXPDFL, doYPDFL, doHPDFL);
 
-    BM.SetPercent(BMpower * powerScalar);
-    FR.SetPercent(FRpower * powerScalar);
-    FL.SetPercent(FLpower * powerScalar);
+    BM.SetPercent(BMpower);
+    FR.SetPercent(FRpower);
+    FL.SetPercent(FLpower);
+    FEHLog::printf("tError: %0.1f hError: %0.1f\n", tError, hError);
 }
 
 bool kiwi::atPoseXY() {

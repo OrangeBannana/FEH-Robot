@@ -38,4 +38,7 @@ void PDFL::update(float value) {
     output = P + D + kF;
 
     output = (kL == 0 || abs(output) >= kL) ? output :  kL * signum(error);
+
+    errorPrevious = error;
+    timePrevious = time;
 }
