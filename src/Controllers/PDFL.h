@@ -40,15 +40,20 @@
 
 class PDFL {
     public:
-    
+        PDFL();
         PDFL(float p, float i, float d, float f);
         void setPIDF(float p, float i, float d, float f);
         void setTarget(float target);
         void update(float value);
+        float getTime() {return time;};
 
+        float PDFoutput = 0;
         float output = 0;
 
+        static int signum(float val) {return (0.0f < val) - (val < 0.0f);};
+
     private:
+
         // Constants
         float
             kP = 0,

@@ -1,10 +1,14 @@
 #include "PDFL.h"
 
+PDFL::PDFL() {
+    kP = 0;
+    kD = 0;
+    kF = 0;
+    kL = 0;
+}
+
 PDFL::PDFL(float kP, float kD, float kF, float kL) {
-    this->kP = kP;
-    this->kD = kD;
-    this->kF = kF;
-    this->kL = kL;
+    setPIDF(kP, kD, kF, kL);
 }
 
 void PDFL::setPIDF(float kP, float kD, float kF, float kL) {
@@ -31,7 +35,10 @@ void PDFL::update(float value) {
     P = kP * error;
     D = (deltaTime != 0) ? kD * deltaErrorDeltaTime : 0;
 
-    output = P + D + kF;
+    PDFoutput = P + D + kF;
 
-    output = (abs(output) >= kL) ? output : ((output * kL) / abs(output));
+    output = (kL == 0 || abs(PDFoutput) >= kL) ? PDFoutput :  kL * signum(error);
+
+    errorPrevious = error;
+    timePrevious = time;
 }
