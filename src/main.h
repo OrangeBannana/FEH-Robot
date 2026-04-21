@@ -26,8 +26,9 @@ OTOSPose readLightPos = {6.13, -19.5, -180},
 
 
 // Robot positions for opening door
-OTOSPose preOpenPose = {11.0, -21.1, 180},
-         openPose = {4.41, -21.1, 160},
+OTOSPose preOpenPose = {3.2, -18.55, -109.0},
+         openPose = {3.2, -15.45, -90},
+         doorTransitionPose = {-0.5, -18.55, -109.0},
          preClosePose = {3.2, -12.45, -90},
          closePose = {3.2, -15.55, -109.0};
 
