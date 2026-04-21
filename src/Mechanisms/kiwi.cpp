@@ -41,7 +41,7 @@ void kiwi::drive() {
     float vTheta = -hOutput;
 
     // Clamp vTheta to avoid current limit
-    vTheta = (abs(vTheta) > (9.0f/12.0f)) ? (9.0f/12.0f) * PDFL::signum(vTheta) :  vTheta;
+    vTheta = (abs(vTheta) > (7.0f/12.0f)) ? (7.0f/12.0f) * PDFL::signum(vTheta) :  vTheta;
 
     // Asymmetric Translational Slew Rate Limiting
     float v = sqrt(pow(vX, 2) + pow(vY, 2));
@@ -117,4 +117,17 @@ bool kiwi::atPoseH() {
 
 bool kiwi::atPose() {
     return atPoseH() && atPoseXY();
+}
+
+bool kiwi::nearPose() {
+    float distX = targetPose.x - pose.x;
+    float distY = targetPose.y - pose.y;
+
+    float Dist = sqrt(pow(distX, 2.0) + pow(distY, 2.0));
+
+    bool nearT = 0.25 >= Dist;
+
+    bool nearH = 1.5 >= abs(targetPose.h - pose.h);
+
+    return nearT && nearH;
 }

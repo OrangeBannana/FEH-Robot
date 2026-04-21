@@ -17,6 +17,9 @@ timer freeTimer;
 timer startBTNTimer;
 timer relocTimer;
 timer pickupTimer;
+timer leverTimer;
+
+int leverIndex = 0;
 
 void logMode() {
     LCD.Clear();
@@ -38,7 +41,7 @@ void logMode() {
 
 void initialize() {
     drivetrain.setMotorDirections(-1.0f, -1.0f, -1.0f);
-    drivetrain.setTranslationPDFL(0.45, 20.0, 0, 0.06);
+    drivetrain.setTranslationPDFL(0.50, 17.0, 0, 0.07);
     drivetrain.setHeadingPDFL(0.025, 0.0, 0, 0.0);
     drivetrain.setTargetPose({0, 0, 0});
 
@@ -48,7 +51,7 @@ void initialize() {
 }
 
 void connectSystems() {
-    // RCS.InitializeTouchMenu("0800A2XNH");
+    RCS.InitializeTouchMenu("0800A2XNH");
     LCD.WriteLine("RCS Connected");
 
     LCD.WriteLine("Initializing BLE Logging...");
@@ -100,6 +103,8 @@ void ERCMain()
 
     WaitForFinalAction();
     freeTimer.start(3.0);
+
+
 
     // Main objective switch statement
     while (true) {
@@ -154,8 +159,8 @@ void ERCMain()
             case 2:
                 drivetrain.setTargetPose(startPos);
                 CDS.update();
-                if (CDS.Color() == CDSColor::Red || true) {
-                    startBTNTimer.start(0.5);
+                if (CDS.Color() == CDSColor::Red) {
+                    startBTNTimer.start(0.35);
                     step = 3;
                 }
             break;
@@ -172,7 +177,7 @@ void ERCMain()
                     drivetrain.setTargetPose(forwardRotatePos1);
                     if (drivetrain.atPose()) {
                         step = 17;
-                        freeTimer.start(0.5);
+                        freeTimer.start(0.35);
                         forwardSpinCounter++;
                     }
                 }
@@ -183,8 +188,8 @@ void ERCMain()
                 if (freeTimer.isOver()) {
                     drivetrain.setTargetPose(forwardRotatePos2);
                     drivetrain.doPDFL(true, false, true);
-                    drivetrain.setDriveVector({0, 0.5, 0});
-                    if (drivetrain.atPose() || freeTimer.getTime() >= 3 || (velPose.magnitude() < 0.4 && drivetrain.moveTime() >= 0.1)) {
+                    drivetrain.setDriveVector({0, 0.25, 0});
+                    if (drivetrain.atPose() || freeTimer.getTime() >= 3 || (velPose.magnitude() < 0.4 && drivetrain.moveTime() >= 0.1) || abs(pose.y) <= abs(forwardRotatePos2.y)) {
                             step = 18;
                             freeTimer.start(0.5);
                             drivetrain.doPDFL(true, true, true);
@@ -194,7 +199,7 @@ void ERCMain()
 
             case 18:
                 drivetrain.setTargetPose(forwardRotatePos3);
-                if (drivetrain.atPose()) {
+                if (drivetrain.nearPose()) {
                     if (forwardSpinCounter >= 3) {
                         step = 7;
                         freeTimer.start(0.25);
@@ -221,7 +226,7 @@ void ERCMain()
                 armServo.SetDegree(armDoorPos);
                 if (freeTimer.getTime() >= 0.25) {
                     drivetrain.setTargetPose(openPose);
-                    if ((drivetrain.atPose() && freeTimer.getTime() >= 1) || freeTimer.isOver() || (velPose.h < 0.1 && velPose.magnitude() < 0.35 && drivetrain.moveTime() >= 0.1)) {
+                    if ((drivetrain.atPose() && freeTimer.getTime() >= 1) || freeTimer.isOver() || (velPose.magnitude() < 0.25 && drivetrain.moveTime() >= 0.1)) {
                         step = 4;
                         armServo.SetDegree(armUpPos);
                         freeTimer.start(.65);
@@ -246,7 +251,7 @@ void ERCMain()
                 drivetrain.doPDFL(false, false, true);
                 if ((abs(velPose.x) < 0.02 &&  abs(velPose.y) < 0.02 && abs(velPose.h) < 0.02 && relocTimer.isOver()) || abs(pose.x) >= abs(pickupPos.x) || freeTimer.isOver()) {
                     step = 6;
-                    pickupTimer.start(0.5);
+                    pickupTimer.start(0.25);
                     drivetrain.zero();
                 }
             break;
@@ -255,27 +260,22 @@ void ERCMain()
                 armServo.SetDegree(armUpPos);
                 if (pickupTimer.isOver()) {
                     step = 12;
-                    drivetrain.setHeadingPDFL(0.015, 0.0, 0, 0.0);
                 }
             break;
             
             case 12:
                 drivetrain.setTargetPose(preRampPos);
                 drivetrain.doPDFL(true, true, true);
-                if (drivetrain.atPose()) {
-                    drivetrain.doPDFL(false, false, true);
-                    drivetrain.setDriveVector({0, 1.0, 0});
+                if (drivetrain.nearPose()) {
+                    drivetrain.setHeadingPDFL(0.005, 0.0, 0, 0.0);
+                    drivetrain.setTargetPose(upRampPos);
                     step = 13;
                 }
             break;
 
             case 13:
-                if (drivetrain.moveTime() >= 1.5) {
-                    drivetrain.setTargetPose(upRampPos);
-                    drivetrain.doPDFL(true, true, true);
-                }
 
-                if (drivetrain.atPose() && drivetrain.moveTime() >= 1.6) {
+                if (drivetrain.nearPose()) {
                     step = 19;
                     freeTimer.start(0.5);
                     drivetrain.doPDFL(false, false, false);
@@ -285,7 +285,7 @@ void ERCMain()
 
             case 19:
                 drivetrain.setDriveVector({0, 0.25, 0});
-                if ((abs(velPose.x) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 5) {
+                if ((abs(velPose.x) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 3) {
                     step = 20;
                     freeTimer.start(0.5);
                 }
@@ -293,15 +293,15 @@ void ERCMain()
 
             case 20:
                 drivetrain.setDriveVector({-0.25, 0.1, -0.05});
-                if ((abs(velPose.y) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 8) {
+                if ((abs(velPose.y) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 3) {
                     step = 21;
                     freeTimer.start(0.5);
                 }
             break;
 
             case 21:
-                drivetrain.setDriveVector({-0.25, 0.25, 0});
-                if ((abs(velPose.y) <= 0.15 && abs(velPose.x) <= 0.15 &&  freeTimer.isOver()) || freeTimer.getTime() >= 7) {
+                drivetrain.setDriveVector({-0.05, 0.30, 0});
+                if ((velPose.magnitude() <= 0.25 && freeTimer.isOver()) || freeTimer.getTime() >= 3) {
                     step = 22;
                 }
             break;
@@ -330,7 +330,7 @@ void ERCMain()
                     armServo.SetDegree(armDropPos);
                     if (freeTimer.getTime() >= 1.0){
                     drivetrain.setTargetPose(postDropPose);
-                    if (drivetrain.atPose()) {
+                    if (drivetrain.nearPose()) {
                         step = 25;
                         armServo.SetDegree(armUpPos);
                     }
@@ -359,6 +359,23 @@ void ERCMain()
                     LCD.WriteLine("red");
                 }
 
+                leverIndex = RCS.GetLever();
+                switch (leverIndex) {
+                    case 0:
+                        currentLeverPose = leftLeverPose;
+                        currentLeverPose2 = leftLeverPose2;
+                    break;
+
+                    case 1:
+                        currentLeverPose = midLeverPose;
+                        currentLeverPose2 = midLeverPose2;
+                    break;
+
+                    case 2:
+                        currentLeverPose = rightLeverPose;
+                        currentLeverPose2 = rightLeverPose2;
+                    break;
+                }
                 step = 27;
                 freeTimer.start(2.0);
 
@@ -373,13 +390,84 @@ void ERCMain()
                 }
 
                 if (drivetrain.atPose() || freeTimer.isOver()) {
-                    step  = 28;
+                    step  = 30;
+                }
+            break;
+
+            case 30:
+                drivetrain.setTargetPose(currentLeverPose);
+                if (drivetrain.atPose()) {
+                    freeTimer.start(0.5);
+                    armServo.SetDegree(armLeverPos);
+                    step = 31;
+                }
+            break;
+
+            case 31:
+                if (freeTimer.isOver()) {
+                    leverTimer.start(5.0);
+                    step = 32;
+                }
+
+            break;
+
+            case 32:
+                drivetrain.setTargetPose(preClosePose);
+                armServo.SetDegree(armUpPos);
+                if (drivetrain.atPose()) {
+                    step = 33;
+                    freeTimer.start(0.25);
+                    armServo.SetDegree(armDoor2Pos);
+                }
+            break;
+
+            case 33:
+                if (freeTimer.isOver()) {
+                    drivetrain.setTargetPose(closePose);
+                    if (drivetrain.atPose() || (drivetrain.moveTime() >= 0.5)) {
+                        step = 34;
+                        freeTimer.start(0.35);
+                        armServo.SetDegree(armUpPos);
+                    }
+                }
+            break;
+
+            case 34:
+                if (freeTimer.isOver()) {
+                    drivetrain.setTargetPose(currentLeverPose2);
+                    if (drivetrain.atPose()) {
+                        step = 35;
+                        armServo.SetDegree(armLeverPos);
+                        freeTimer.start(0.45);
+                    }
+                }
+            break;
+
+            case 35:
+                if (freeTimer.isOver()) {
+                    drivetrain.setTargetPose(currentLeverPose);
+
+                    if (drivetrain.atPose() && leverTimer.isOver()) {
+                        step = 36;
+                        armServo.SetDegree(armLeverUpPos);
+                        freeTimer.start(0.35);
+                    }
+                }
+            break;
+
+            case 36:
+                if (freeTimer.isOver()) {
+                    step = 28;
+                    freeTimer.start(0.5);
                 }
             break;
 
             case 28:
                 drivetrain.setTargetPose(preDownRampPos);
-                if (drivetrain.atPose()) {
+                if (freeTimer.isOver()) {
+                    armServo.SetDegree(armUpPos);
+                }
+                 if (drivetrain.nearPose()) {
                     step = 29;
                 }
             break;

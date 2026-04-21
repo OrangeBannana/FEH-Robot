@@ -40,5 +40,5 @@ class cds {
 
         float redVal = 0.415;
         float offVal = 3.162;
-        float blueVal = 0.0;
+        float blueVal = 1.35;
 };

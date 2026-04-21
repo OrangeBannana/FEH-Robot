@@ -29,6 +29,7 @@ class kiwi {
     bool atPose();
     bool atPoseXY();
     bool atPoseH();
+    bool nearPose();
     bool timedOut() {return moveTimer.isOver();};
     float moveTime() {return moveTimer.getTime();};
     
