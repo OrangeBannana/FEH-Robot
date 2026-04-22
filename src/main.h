@@ -17,17 +17,17 @@ OTOSPose zeroPos = {0.0, 0.0, 0.0},
          preRampPos = {-4.81, -16.50, -180.0},
          upRampPos = {-1, -42.0, 90},
          preDownRampPos = {8.51, -2.4, -90},
-         finishPos = {43, -3, -90};
+         finishPos = {45, -3, -90};
          
 // Robot positions pressing humidifier button
-OTOSPose readLightPos = {6.13, -19.5, -180},
+OTOSPose readLightPos = {6.13+.25, -19.5+.15, -180},
          blueButtonPos = {5.9, -23.5, -120},
          redButtonPos = {3.0, -23.5, -115};
 
 
 // Robot positions for opening door
-OTOSPose preOpenPose = {3.2, -18.55, -109.0},
-         openPose = {3.2, -15.45, -90},
+OTOSPose preOpenPose = {3.0, -18.55, -109.0},
+         openPose = {3.0, -15.45, -90},
          doorTransitionPose = {-0.5, -18.55, -109.0},
          preClosePose = {3.2, -12.45, -90},
          closePose = {3.2, -15.55, -109.0};
@@ -48,11 +48,8 @@ OTOSPose currentLeverPose, currentLeverPose2,
          leftLeverPose2 = {leftLeverPose.x + 1.5, leftLeverPose.y + 1.5, leftLeverPose.h};
 
 // Compost Positions
-OTOSPose forwardRotatePos1 = {10.8, -6.8, 0},
-         forwardRotatePos2 = {10.8, -6.2, 0},
-         forwardRotatePos3 = {9.5, -9.5, 0},
-         backRotatePos1 = {17, -13.00, 0},
-         backRotatePos2 = {17, -9.00, 0};
+OTOSPose compostEngagedPose = {10.8, -6.6, 0},
+         compostTransitionPose = {8.0, -9.5, 0};
 
 OTOSPose controllerTestPose1 = {0, 0, 0},
          controllerTestPose2 = {0, 10, -90},
@@ -60,13 +57,17 @@ OTOSPose controllerTestPose1 = {0, 0, 0},
          controllerTestPose4 = {10, 0, 180};
 
 // Arm Positions
-int armUpPos = 180, 
+double armUpPos = 180, 
     armDownPos = 132,
     armDropPos = 147,
     armIntermediateDropPos = (armDropPos + armUpPos) / 2,
-    armCompostPos = 130,
-    armDoorPos = 165.5,
-    armDoor2Pos = 130.5,
+    armCompostPos = 137,
+    armDoorPos = 168.0,
+    armDoor2Pos = 133.0,
     armLeverPos = 115.0,
     armLeverUpPos = 150.0,
     armTestPos = 132;
+
+// Compost Servo Positions
+double CSforward = 1600,
+       CSbackwards = 1350;

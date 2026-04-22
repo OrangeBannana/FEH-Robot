@@ -30,6 +30,7 @@ class kiwi {
     bool atPoseXY();
     bool atPoseH();
     bool nearPose();
+    bool nearPoseR(float radius);
     bool timedOut() {return moveTimer.isOver();};
     float moveTime() {return moveTimer.getTime();};
     
