@@ -17,20 +17,21 @@ OTOSPose zeroPos = {0.0, 0.0, 0.0},
          preRampPos = {-4.81, -16.50, -180.0},
          upRampPos = {-1, -42.0, 90},
          preDownRampPos = {8.51, -2.4, -90},
-         finishPos = {45, -3, -90};
+         finishPos = {45, -3, -90},
+         finishPos2 = {45, -0, -90};
          
 // Robot positions pressing humidifier button
-OTOSPose readLightPos = {6.13+.25, -19.5+.15, -180},
+OTOSPose readLightPos = {6.13+.1, -19.5, -180},
          blueButtonPos = {5.9, -23.5, -120},
          redButtonPos = {3.0, -23.5, -115};
 
 
 // Robot positions for opening door
-OTOSPose preOpenPose = {3.0, -18.55, -109.0},
-         openPose = {3.0, -15.45, -90},
-         doorTransitionPose = {-0.5, -18.55, -109.0},
-         preClosePose = {3.2, -12.45, -90},
-         closePose = {3.2, -15.55, -109.0};
+OTOSPose preOpenPose = {3.6, -19, -109.0},
+         openPose = {3.6, -15.45, -82},
+         doorTransitionPose = {-0.5, -18.85, -109.0},
+         preClosePose = {3.8, -12.45, -90},
+         closePose = {3.7, -15.55, -115.0};
 
 // Robot positions for picking up and depositing apple bucket
 OTOSPose prePickupPos = {6.72, -14.06, -109}, // UP TO DATE
@@ -48,8 +49,8 @@ OTOSPose currentLeverPose, currentLeverPose2,
          leftLeverPose2 = {leftLeverPose.x + 1.5, leftLeverPose.y + 1.5, leftLeverPose.h};
 
 // Compost Positions
-OTOSPose compostEngagedPose = {10.8, -6.6, 0},
-         compostTransitionPose = {8.0, -9.5, 0};
+OTOSPose compostEngagedPose = {11.21, -6.0, 0},
+         compostTransitionPose = {6, -7.5, 0};
 
 OTOSPose controllerTestPose1 = {0, 0, 0},
          controllerTestPose2 = {0, 10, -90},
@@ -58,16 +59,16 @@ OTOSPose controllerTestPose1 = {0, 0, 0},
 
 // Arm Positions
 double armUpPos = 180, 
-    armDownPos = 132,
+    armDownPos = 130,
     armDropPos = 147,
     armIntermediateDropPos = (armDropPos + armUpPos) / 2,
-    armCompostPos = 137,
-    armDoorPos = 168.0,
-    armDoor2Pos = 133.0,
-    armLeverPos = 115.0,
+    armCompostPos = 140,
+    armDoorPos = 160.0,
+    armDoor2Pos = 140.0,
+    armLeverPos = 100.,
     armLeverUpPos = 150.0,
     armTestPos = 132;
 
 // Compost Servo Positions
-double CSforward = 1600,
-       CSbackwards = 1350;
+double CSforward = 180,
+       CSbackwards = 0;
