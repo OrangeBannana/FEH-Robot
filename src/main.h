@@ -27,11 +27,11 @@ OTOSPose readLightPos = {6.13+.1, -19.5, -180},
 
 
 // Robot positions for opening door
-OTOSPose preOpenPose = {3.6, -19, -109.0},
-         openPose = {3.6, -15.45, -82},
+OTOSPose preOpenPose = {3.4, -19, -109.0},
+         openPose = {3.4, -15.45, -82},
          doorTransitionPose = {-0.5, -18.85, -109.0},
-         preClosePose = {3.8, -12.45, -90},
-         closePose = {3.7, -15.55, -115.0};
+         preClosePose = {3.8, -12.45-2.5, -75},
+         closePose = {3.7, -12.45-3.25, -120.0};
 
 // Robot positions for picking up and depositing apple bucket
 OTOSPose prePickupPos = {6.72, -14.06, -109}, // UP TO DATE
