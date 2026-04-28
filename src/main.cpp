@@ -85,10 +85,35 @@ void connectSystems() {
 
 }
 
+void armTest() {
+    int touchX, touchY;
+    LCD.WriteLine(armTestPose);
+    while (true) {
+        // Touch Detection
+        CDS.update();
+        if (LCD.Touch(&touchX, &touchY)) {
+            if (touchX <= 160) {
+                armTestPose = armTestPose - 1;
+            } else {
+                armTestPose = armTestPose + 1;
+            }
+            LCD.Clear();
+            LCD.WriteLine(armTestPose);
+            LCD.WriteLine(CDS.value());
+            Sleep(5);
+        }
+
+        armServo.SetDegree(armTestPose);
+    }
+}
+
 void ERCMain()
 {   
 
     initialize();
+
+    // armTest();
+
     connectSystems();
 
     // State  counter
@@ -178,7 +203,7 @@ void ERCMain()
             break;
 
             case 16:
-                if (drivetrain.atPose() || drivetrain.moveTime() >= 1.0) {
+                if (drivetrain.atPose() || drivetrain.moveTime() >= 1.25) {
                     step = 17;
                     freeTimer.start(1.2);
                     compostServo.SetDegree(CSforward);
@@ -213,7 +238,7 @@ void ERCMain()
             case 4:
                 if (freeTimer.isOver()) {
                 armServo.SetDegree(armDownPos);
-                    if (drivetrain.atPose() && freeTimer.getTime() >= 0.6) {
+                    if ((drivetrain.atPose() || drivetrain.timedOut()) && freeTimer.getTime() >= 0.6) {
                         relocTimer.start(2.0);
                         step = 5;
                         freeTimer.start(4.0);
@@ -317,7 +342,7 @@ void ERCMain()
 
             case 25:
                 drivetrain.setTargetPose(readLightPos);
-                if (drivetrain.atPose()) {
+                if (drivetrain.atPose() || drivetrain.moveTime() >= 6) {
                     step = 26;
                 }
             break;
@@ -371,7 +396,7 @@ void ERCMain()
 
             case 30:
                 drivetrain.setTargetPose(currentLeverPose);
-                if ((drivetrain.atPose() && velPose.magnitude() <= 0.5) || drivetrain.timedOut()) {
+                if ((drivetrain.atPose() && velPose.magnitude() <= 0.35 && drivetrain.moveTime() >= 1.25) || drivetrain.timedOut()) {
                     freeTimer.start(0.75);
                     armServo.SetDegree(armLeverPos);
                     step = 31;
@@ -422,12 +447,33 @@ void ERCMain()
 
             case 39:
                 if (drivetrain.atPose() || drivetrain.moveTime() >= 1.0) {
+                    drivetrain.setTargetPose(openTransitionPose);
+                    step = 41;
+                }
+            break;
+
+            case 41:
+                if (drivetrain.atPose()) {
+                    step = 42;
+                    drivetrain.setTargetPose(preOpenPose2);
+                }
+            break;
+
+            case 42:
+                if (drivetrain.atPose()) {
+                    drivetrain.setTargetPose(openPose);
+                    step = 43;
+                }
+            break;
+            
+            case 43:
+                if (drivetrain.atPose() || drivetrain.moveTime() >= 1.0) {
                     freeTimer.start(0.35);
                     armServo.SetDegree(armUpPos);
                     step = 34;
                 }
             break;
-
+            
             case 34:
                 if (freeTimer.isOver()) {
                     drivetrain.setTargetPose(currentLeverPose2);

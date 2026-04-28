@@ -38,7 +38,7 @@ class cds {
         float lastReadValue;
         CDSColor lastReadColor;
 
-        float redVal = 0.415;
-        float offVal = 3.162;
-        float blueVal = 1.35;
+        float redVal = 0.32;
+        float offVal = 4.5;
+        float blueVal = 1.12;
 };

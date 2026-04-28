@@ -11,7 +11,7 @@
 
 // General Robot Positions
 OTOSPose zeroPos = {0.0, 0.0, 0.0},
-         startPos = {0.3-.25-.15 - .5, -5.18+0.5 + .25, -129.0},
+         startPos = {0.3-.25-.15 - .5, -5.18+0.5 + .25-.15, -129.0},
          buttonPos = {-6.5, -4.0, 0},
          rampTransitionPos = {5.0, -16.5, 151.00},
          preRampPos = {-4.81, -16.50, -180.0},
@@ -28,10 +28,12 @@ OTOSPose readLightPos = {6.13+.1, -19.5, -180},
 
 // Robot positions for opening door
 OTOSPose preOpenPose = {3.4, -19, -109.0},
-         openPose = {3.4, -15.45, -82},
+         openPose = {3.4, -16.0, -82},
+         openTransitionPose = {1.0, -18, -109.0},
+         preOpenPose2 = {3.4, -17.0, -109.0},
          doorTransitionPose = {-0.5, -18.85, -109.0},
          preClosePose = {3.8, -12.45-2.5, -75},
-         closePose = {3.7, -12.45-3.25, -120.0};
+         closePose = {3.7, -12.45-3.5, -120.0};
 
 // Robot positions for picking up and depositing apple bucket
 OTOSPose prePickupPos = {6.72, -14.06, -109}, // UP TO DATE
@@ -58,16 +60,15 @@ OTOSPose controllerTestPose1 = {0, 0, 0},
          controllerTestPose4 = {10, 0, 180};
 
 // Arm Positions
-double armUpPos = 180, 
-    armDownPos = 130,
-    armDropPos = 147,
+double armUpPos = 180, // UPDATED
+    armDownPos = 131, // UPDATED
+    armDropPos = 152, // UPDATED
     armIntermediateDropPos = (armDropPos + armUpPos) / 2,
-    armCompostPos = 140,
-    armDoorPos = 160.0,
-    armDoor2Pos = 140.0,
-    armLeverPos = 100.,
-    armLeverUpPos = 150.0,
-    armTestPos = 132;
+    armCompostPos = 146, // UPDATED
+    armDoor2Pos = 141.0, // UPDATED
+    armLeverPos = 113.0, // UPDATED
+    armLeverUpPos = 152.0, // UPDATED
+    armTestPose = 132;
 
 // Compost Servo Positions
 double CSforward = 180,
