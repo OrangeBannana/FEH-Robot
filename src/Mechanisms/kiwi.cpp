@@ -116,7 +116,7 @@ bool kiwi::atPoseH() {
 }
 
 bool kiwi::atPose() {
-    return atPoseH() && atPoseXY();
+    return (atPoseH() && atPoseXY()) || (moveTime() >= 10.0);
 }
 
 bool kiwi::nearPose() {
@@ -126,6 +126,19 @@ bool kiwi::nearPose() {
     float Dist = sqrt(pow(distX, 2.0) + pow(distY, 2.0));
 
     bool nearT = 0.25 >= Dist;
+
+    bool nearH = 1.5 >= abs(targetPose.h - pose.h);
+
+    return nearT && nearH;
+}
+
+bool kiwi::nearPoseR(float radius) {
+    float distX = targetPose.x - pose.x;
+    float distY = targetPose.y - pose.y;
+
+    float Dist = sqrt(pow(distX, 2.0) + pow(distY, 2.0));
+
+    bool nearT = radius >= Dist;
 
     bool nearH = 1.5 >= abs(targetPose.h - pose.h);
 

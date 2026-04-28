@@ -11,26 +11,29 @@
 
 // General Robot Positions
 OTOSPose zeroPos = {0.0, 0.0, 0.0},
-         startPos = {0.3-.25-.15 - .5, -5.18+0.5 + .25, -129.0},
+         startPos = {0.3-.25-.15 - .5, -5.18+0.5 + .25-.15, -129.0},
          buttonPos = {-6.5, -4.0, 0},
          rampTransitionPos = {5.0, -16.5, 151.00},
          preRampPos = {-4.81, -16.50, -180.0},
          upRampPos = {-1, -42.0, 90},
          preDownRampPos = {8.51, -2.4, -90},
-         finishPos = {43, -3, -90};
+         finishPos = {45, -3, -90},
+         finishPos2 = {45, -0, -90};
          
 // Robot positions pressing humidifier button
-OTOSPose readLightPos = {6.13, -19.5, -180},
+OTOSPose readLightPos = {6.13+.1, -19.5, -180},
          blueButtonPos = {5.9, -23.5, -120},
          redButtonPos = {3.0, -23.5, -115};
 
 
 // Robot positions for opening door
-OTOSPose preOpenPose = {3.2, -18.55, -109.0},
-         openPose = {3.2, -15.45, -90},
-         doorTransitionPose = {-0.5, -18.55, -109.0},
-         preClosePose = {3.2, -12.45, -90},
-         closePose = {3.2, -15.55, -109.0};
+OTOSPose preOpenPose = {3.4, -19, -109.0},
+         openPose = {3.4, -16.0, -82},
+         openTransitionPose = {1.0, -18, -109.0},
+         preOpenPose2 = {3.4, -17.0, -109.0},
+         doorTransitionPose = {-0.5, -18.85, -109.0},
+         preClosePose = {3.8, -12.45-2.5, -75},
+         closePose = {3.7, -12.45-3.5, -120.0};
 
 // Robot positions for picking up and depositing apple bucket
 OTOSPose prePickupPos = {6.72, -14.06, -109}, // UP TO DATE
@@ -48,11 +51,8 @@ OTOSPose currentLeverPose, currentLeverPose2,
          leftLeverPose2 = {leftLeverPose.x + 1.5, leftLeverPose.y + 1.5, leftLeverPose.h};
 
 // Compost Positions
-OTOSPose forwardRotatePos1 = {10.8, -6.8, 0},
-         forwardRotatePos2 = {10.8, -6.2, 0},
-         forwardRotatePos3 = {9.5, -9.5, 0},
-         backRotatePos1 = {17, -13.00, 0},
-         backRotatePos2 = {17, -9.00, 0};
+OTOSPose compostEngagedPose = {11.21, -6.0, 0},
+         compostTransitionPose = {6, -7.5, 0};
 
 OTOSPose controllerTestPose1 = {0, 0, 0},
          controllerTestPose2 = {0, 10, -90},
@@ -60,13 +60,16 @@ OTOSPose controllerTestPose1 = {0, 0, 0},
          controllerTestPose4 = {10, 0, 180};
 
 // Arm Positions
-int armUpPos = 180, 
-    armDownPos = 132,
-    armDropPos = 147,
+double armUpPos = 180, // UPDATED
+    armDownPos = 131, // UPDATED
+    armDropPos = 152, // UPDATED
     armIntermediateDropPos = (armDropPos + armUpPos) / 2,
-    armCompostPos = 130,
-    armDoorPos = 165.5,
-    armDoor2Pos = 130.5,
-    armLeverPos = 115.0,
-    armLeverUpPos = 150.0,
-    armTestPos = 132;
+    armCompostPos = 146, // UPDATED
+    armDoor2Pos = 141.0, // UPDATED
+    armLeverPos = 113.0, // UPDATED
+    armLeverUpPos = 152.0, // UPDATED
+    armTestPose = 132;
+
+// Compost Servo Positions
+double CSforward = 180,
+       CSbackwards = 0;

@@ -7,6 +7,7 @@ bool controllerTestMode = false;
 kiwi drivetrain(FEHMotor::Motor2, FEHMotor::Motor3, FEHMotor::Motor1, 12.0);
 cds CDS(FEHIO::Pin0);
 FEHServo armServo(FEHServo::Servo0);
+FEHServo compostServo(FEHServo::Servo7);
 
 // Robot position tracking & pose offset for OTOS
 OTOSPose pose;
@@ -48,6 +49,10 @@ void initialize() {
     armServo.SetMin(750);
     armServo.SetMax(2200);
     armServo.SetDegree(armUpPos);
+
+    compostServo.SetMin(1100);
+    compostServo.SetMax(1700);
+    compostServo.Off();
 }
 
 void connectSystems() {
@@ -80,16 +85,39 @@ void connectSystems() {
 
 }
 
+void armTest() {
+    int touchX, touchY;
+    LCD.WriteLine(armTestPose);
+    while (true) {
+        // Touch Detection
+        CDS.update();
+        if (LCD.Touch(&touchX, &touchY)) {
+            if (touchX <= 160) {
+                armTestPose = armTestPose - 1;
+            } else {
+                armTestPose = armTestPose + 1;
+            }
+            LCD.Clear();
+            LCD.WriteLine(armTestPose);
+            LCD.WriteLine(CDS.value());
+            Sleep(5);
+        }
+
+        armServo.SetDegree(armTestPose);
+    }
+}
+
 void ERCMain()
 {   
+
     initialize();
+
+    // armTest();
+
     connectSystems();
 
     // State  counter
     int step = 1;
-
-    // Compost Counters
-    int forwardSpinCounter = 0;
 
     if (testMode) {
         step = 0;
@@ -169,56 +197,48 @@ void ERCMain()
                 drivetrain.setTargetPose(buttonPos);
                 if (startBTNTimer.isOver()) {
                     step = 16;
+                    drivetrain.setTargetPose(compostEngagedPose);
+                    armServo.SetDegree(armCompostPos);
                 }
             break;
 
             case 16:
-                if (freeTimer.isOver() || forwardSpinCounter == 0) {
-                    drivetrain.setTargetPose(forwardRotatePos1);
-                    if (drivetrain.atPose()) {
-                        step = 17;
-                        freeTimer.start(0.35);
-                        forwardSpinCounter++;
-                    }
+                if (drivetrain.atPose() || drivetrain.moveTime() >= 1.25) {
+                    step = 17;
+                    freeTimer.start(1.2);
+                    compostServo.SetDegree(CSforward);
                 }
             break;
 
             case 17:
-                armServo.SetDegree(armCompostPos);
                 if (freeTimer.isOver()) {
-                    drivetrain.setTargetPose(forwardRotatePos2);
-                    drivetrain.doPDFL(true, false, true);
-                    drivetrain.setDriveVector({0, 0.25, 0});
-                    if (drivetrain.atPose() || freeTimer.getTime() >= 3 || (velPose.magnitude() < 0.4 && drivetrain.moveTime() >= 0.1) || abs(pose.y) <= abs(forwardRotatePos2.y)) {
-                            step = 18;
-                            freeTimer.start(0.5);
-                            drivetrain.doPDFL(true, true, true);
-                    }
+                        step = 18;
+                        freeTimer.start(1.2);
+                        compostServo.SetDegree(CSbackwards);
                 }
             break;
 
             case 18:
-                drivetrain.setTargetPose(forwardRotatePos3);
-                if (drivetrain.nearPose()) {
-                    if (forwardSpinCounter >= 3) {
-                        step = 4;
-                        freeTimer.start(0.25);
-                    } else {
-                        step = 16;
-                        freeTimer.start(0.25);
+                if (freeTimer.isOver()) {
+                    compostServo.Off();
+                    drivetrain.setTargetPose(compostTransitionPose);
+                    if (drivetrain.moveTime() >= 0.4) {
+                        armServo.SetDegree(armUpPos);
+                        if (drivetrain.nearPose()) {
+                            step = 4;
+                            armServo.SetDegree(armUpPos);
+                            freeTimer.start(0.25);
+                            drivetrain.setTargetPose(prePickupPos);
+                        }
                     }
-                    armServo.SetDegree(armUpPos);
+
                 }
             break;
 
             case 4:
-                drivetrain.doPDFL(true, true, true);
-                if (freeTimer.getTime() >= 1){
-                    armServo.SetDegree(armDownPos);
-                }
                 if (freeTimer.isOver()) {
-                drivetrain.setTargetPose(prePickupPos);
-                    if (drivetrain.atPose()) {
+                armServo.SetDegree(armDownPos);
+                    if ((drivetrain.atPose() || drivetrain.timedOut()) && freeTimer.getTime() >= 0.6) {
                         relocTimer.start(2.0);
                         step = 5;
                         freeTimer.start(4.0);
@@ -255,7 +275,7 @@ void ERCMain()
 
             case 13:
 
-                if (drivetrain.nearPose()) {
+                if (drivetrain.nearPoseR(0.35)) {
                     step = 19;
                     freeTimer.start(0.5);
                     drivetrain.doPDFL(false, false, false);
@@ -264,7 +284,7 @@ void ERCMain()
             break;
 
             case 19:
-                drivetrain.setDriveVector({0, 0.25, 0});
+                drivetrain.setDriveVector({0, 0.4, 0});
                 if ((abs(velPose.x) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 3) {
                     step = 20;
                     freeTimer.start(0.5);
@@ -272,16 +292,16 @@ void ERCMain()
                 break;
 
             case 20:
-                drivetrain.setDriveVector({-0.25, 0.1, -0.05});
-                if ((abs(velPose.y) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 3) {
+                drivetrain.setDriveVector({-0.4, 0.1, -0.05});
+                if ((abs(velPose.y) <= 0.4 && freeTimer.isOver()) || freeTimer.getTime() >= 1.5) {
                     step = 21;
                     freeTimer.start(0.5);
                 }
             break;
 
             case 21:
-                drivetrain.setDriveVector({-0.05, 0.30, 0});
-                if ((velPose.magnitude() <= 0.25 && freeTimer.isOver()) || freeTimer.getTime() >= 3) {
+                drivetrain.setDriveVector({-0.02, 0.30, 0});
+                if ((velPose.magnitude() <= 0.25 && freeTimer.isOver()) || freeTimer.getTime() >= 1.5) {
                     step = 22;
                 }
             break;
@@ -298,8 +318,8 @@ void ERCMain()
             case 23:
                 drivetrain.doPDFL(true, true, true);
                 drivetrain.setTargetPose(dropPose);
-                if (drivetrain.atPose()) {
-                    freeTimer.start(0.5);
+                if (drivetrain.atPose() || drivetrain.timedOut()) {
+                    freeTimer.start(0.25);
                     armServo.SetDegree(armIntermediateDropPos);
                     step = 24;
                 }
@@ -308,7 +328,7 @@ void ERCMain()
             case 24:
                 if(freeTimer.isOver()) {
                     armServo.SetDegree(armDropPos);
-                    if (freeTimer.getTime() >= 1.0){
+                    if (freeTimer.getTime() >= 0.5){
                     drivetrain.setTargetPose(postDropPose);
                     if (drivetrain.nearPose()) {
                         step = 25;
@@ -322,7 +342,7 @@ void ERCMain()
 
             case 25:
                 drivetrain.setTargetPose(readLightPos);
-                if (drivetrain.atPose()) {
+                if (drivetrain.atPose() || drivetrain.moveTime() >= 6) {
                     step = 26;
                 }
             break;
@@ -376,8 +396,8 @@ void ERCMain()
 
             case 30:
                 drivetrain.setTargetPose(currentLeverPose);
-                if (drivetrain.atPose()) {
-                    freeTimer.start(0.5);
+                if ((drivetrain.atPose() && velPose.magnitude() <= 0.35 && drivetrain.moveTime() >= 1.25) || drivetrain.timedOut()) {
+                    freeTimer.start(0.75);
                     armServo.SetDegree(armLeverPos);
                     step = 31;
                 }
@@ -404,7 +424,7 @@ void ERCMain()
             case 33:
                 if (freeTimer.isOver()) {
                     drivetrain.setTargetPose(closePose);
-                    if (drivetrain.atPose() || (drivetrain.moveTime() >= 0.5)) {
+                    if (drivetrain.atPose() || (drivetrain.moveTime() >= 1.5)) {
                         step = 37;
                         drivetrain.setTargetPose(doorTransitionPose);
                     }
@@ -419,20 +439,41 @@ void ERCMain()
             break;
 
             case 38:
-                if (drivetrain.atPose()) {
+                if (drivetrain.atPose() && velPose.magnitude() <= 0.5) {
                     step = 39;
                     drivetrain.setTargetPose(openPose);
                 }
             break;
 
             case 39:
-                if (drivetrain.atPose() || drivetrain.moveTime() >= 0.5) {
+                if (drivetrain.atPose() || drivetrain.moveTime() >= 1.0) {
+                    drivetrain.setTargetPose(openTransitionPose);
+                    step = 41;
+                }
+            break;
+
+            case 41:
+                if (drivetrain.atPose()) {
+                    step = 42;
+                    drivetrain.setTargetPose(preOpenPose2);
+                }
+            break;
+
+            case 42:
+                if (drivetrain.atPose()) {
+                    drivetrain.setTargetPose(openPose);
+                    step = 43;
+                }
+            break;
+            
+            case 43:
+                if (drivetrain.atPose() || drivetrain.moveTime() >= 1.0) {
                     freeTimer.start(0.35);
                     armServo.SetDegree(armUpPos);
                     step = 34;
                 }
             break;
-
+            
             case 34:
                 if (freeTimer.isOver()) {
                     drivetrain.setTargetPose(currentLeverPose2);
@@ -448,7 +489,7 @@ void ERCMain()
                 if (freeTimer.isOver()) {
                     drivetrain.setTargetPose(currentLeverPose);
 
-                    if (drivetrain.atPose() && leverTimer.isOver()) {
+                    if ((drivetrain.atPose() || drivetrain.timedOut()) && leverTimer.isOver()) {
                         step = 36;
                         armServo.SetDegree(armLeverUpPos);
                         freeTimer.start(0.35);
@@ -458,8 +499,12 @@ void ERCMain()
 
             case 36:
                 if (freeTimer.isOver()) {
-                    step = 28;
-                    freeTimer.start(0.5);
+                    drivetrain.setTargetPose(currentLeverPose2);
+                    armServo.SetDegree(armLeverPos);
+                    if (drivetrain.atPose()) {
+                        step = 28;
+                        freeTimer.start(0.25);
+                    }
                 }
             break;
 
@@ -475,7 +520,15 @@ void ERCMain()
 
             case 29:
                 drivetrain.setTargetPose(finishPos);
+                if (drivetrain.atPose()) {
+                    step = 40;
+                }
             break;
+
+            case 40:
+                drivetrain.setTargetPose(finishPos2);
+            break;
+            
 
         }
 
