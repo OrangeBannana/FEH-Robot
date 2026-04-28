@@ -116,7 +116,7 @@ bool kiwi::atPoseH() {
 }
 
 bool kiwi::atPose() {
-    return atPoseH() && atPoseXY();
+    return (atPoseH() && atPoseXY()) || (moveTime() >= 10.0);
 }
 
 bool kiwi::nearPose() {
